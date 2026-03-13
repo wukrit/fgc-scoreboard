@@ -249,9 +249,9 @@
 			text-transform: uppercase;
 			letter-spacing: 0.05em;
 			padding: 10px;
-			margin-bottom: 16px;
-			display: none;
-			border: 3px solid #000;
+			margin-top: 8px;
+			border: 3px solid transparent;
+			visibility: hidden;
 		}
 
 		.status-ok {
@@ -291,8 +291,6 @@
 		No bin ID found. Add <strong>?bin=YOUR_ID</strong> to the URL.<br>
 		Create a free bin at <a href="https://www.npoint.io" target="_blank" style="color:#ffeb3b;">npoint.io</a>
 	</div>
-
-	<div id="status"></div>
 
 	<div class="players-grid">
 		<section class="player-section p1">
@@ -371,6 +369,8 @@
 		<button class="btn-clear" onclick="clearAll()">Clear</button>
 	</div>
 
+	<div id="status">&nbsp;</div>
+
 	<script>
 		var urlParams = new URLSearchParams(window.location.search);
 		var binId = urlParams.get('bin');
@@ -440,6 +440,7 @@
 			var val = parseInt(input.value, 10) || 0;
 			val = Math.max(0, Math.min(99, val + delta));
 			input.value = String(val);
+			save();
 		}
 
 		function getFormData() {
@@ -533,10 +534,11 @@
 			}
 			el.textContent = msg;
 			el.className = 'status-' + type;
-			el.style.display = 'block';
+			el.style.visibility = 'visible';
 			if (type === 'ok') {
 				statusTimeoutId = setTimeout(function() {
-					el.style.display = 'none';
+					el.style.visibility = 'hidden';
+					el.textContent = '\u00a0';
 					statusTimeoutId = null;
 				}, 2000);
 			}
