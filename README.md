@@ -1,37 +1,84 @@
 # FGC Scoreboard
-FGC Scoreboard is an html and css scoreboard for fighting game tournament streams. It uses absolutely no images (except for tournament/company logos which I've included a generic PSD for) and absolutely no webm files for animations.
+FGC Scoreboard is an HTML and CSS scoreboard overlay for fighting game tournament streams. It uses no images for the scoreboard itself (only optional tournament logos) and no webm files for animations — everything is CSS keyframes and GreenSock (TweenMax).
 
-## How FGC Scoreboard Works
-To get started with FGC Scoreboard just open your streaming platform of choice, add a **browser source**, and then navigate to wherever you saved the **scoreboard.html** file with a `?bin=<npoint_id>` parameter.
+## Quick Start
 
-All data entry happens through the **controller** — a mobile-friendly web form hosted on GitHub Pages. Use it to update:
+There are two ways to use FGC Scoreboard: **LAN mode** (recommended for tournaments) and **Remote mode** (for online setups).
+
+### LAN Mode (No Internet Required)
+
+Best for in-person tournaments. Requires Python 3.
+
+1. Run the server from the project directory:
+   ```
+   python3 server.py
+   ```
+2. The server prints your LAN URLs:
+   ```
+   FGC Scoreboard Server
+   Controller: http://192.168.1.5:8080/controller.html
+   Overlay:    http://192.168.1.5:8080/_overlays/scoreboard.html
+   ```
+3. Open the **Controller** URL on your phone or tablet.
+4. In OBS, add a **Browser Source** pointing to the **Overlay** URL.
+5. Enter scores on the controller, hit **Save**, and the overlay updates live.
+
+To use a different port: `python3 server.py --port 9090`
+
+### Remote Mode (Internet Required)
+
+Best for online tournaments or when the controller and streaming PC aren't on the same network.
+
+1. Create a free JSON bin at [npoint.io](https://www.npoint.io/) and copy the bin ID.
+2. In OBS, add a **Browser Source** pointing to:
+   ```
+   https://yourgithubpages.url/_overlays/scoreboard.html?bin=YOUR_BIN_ID
+   ```
+3. Open the controller with the same bin ID:
+   ```
+   https://yourgithubpages.url/controller.html?bin=YOUR_BIN_ID
+   ```
+4. Enter scores on the controller, hit **Save**, and the overlay polls for updates every second.
+
+## The Controller
+
+The controller is a mobile-friendly web form for updating:
+- Player Names
+- Team Names
+- Scores
+- Round
+- Game
+
+It also has **Swap** (switch player sides), **Reset** (zero out scores), and **Clear** (wipe all fields) buttons.
+
+## Supported Games
+
+When you select a game and hit save, the overlay adjusts its position so scores and logos don't cover important in-game gauges (HP bars, meters, etc.).
+
+| Game | Layout |
+|------|--------|
+| BBTAG, SFVCE, TEKKEN7, UNICLR | Shifted down |
+| BBCF, DBFZ, GGXRD, KOFXIV, MVCI, SF6, UMVC3 | Default |
+| USF4 | Custom offset |
+
+## Customization
+
+**Colors and styling:** Edit the SCSS variables at the top of `_overlays/css/style.scss`, then compile:
 ```
-* Player Names
-* Team Names
-* Round
-* Score
-* Game
+sass _overlays/css/style.scss _overlays/css/style.css
 ```
 
-The controller writes to a remote JSON store (npoint.io), and the overlay polls it every second for updates.
+**Animation timing:** Edit the inline `<script>` variables in `_overlays/scoreboard.html` (timing, offsets, distances).
 
-To change any of the colors, the font, the opacity, etc. just open the scss file and tweak the variables at the top. There's no need to jump into the rest of the styling unless you want to change something more drastic.
+**Logos:** Drop tournament/company logo images into the logos section of `scoreboard.html`. Multiple logos rotate automatically.
 
-Finally, when you select a game (and hit save) the layout will adjust so that the scores and logos don't cover important gauges.
-#### Supported Games
-```
-* BBCF
-* BBTAG
-* DBFZ
-* GGXRD
-* KOFXIV
-* MVCI
-* SFVCE
-* TEKKEN7
-* UMVC3
-* UNICLR
-* USF4
-```
+## How It Works
+
+The scoreboard has three sync modes, auto-detected by priority:
+
+1. **Remote** (`?bin=` parameter present) — Controller POSTs to npoint.io, overlay polls it every 1s.
+2. **LAN** (served over `http:` without `?bin=`) — Controller POSTs to the local server, overlay polls it every 1s.
+3. **Local** (`file://` protocol) — Controller writes to localStorage, overlay syncs via browser storage events. Only works within the same browser.
 
 ## Drop Me a Line
 If you found this at all useful, or have some suggestions, please let me know! You can drop me a line on twitter ([@tarikfayad](https://twitter.com/tarikfayad)), find me on Twitch ([ImpurestClub](https://www.twitch.tv/impurestclub/)), or ping me on my Discord server ([Link](https://discord.gg/ykj8tsN)).
@@ -51,13 +98,6 @@ Also, thank you to [u/Brylark](https://www.reddit.com/r/VALORANT/comments/g0747t
   <img src="screenshots/dbfz.png" alt="FGC Scoreboard on DBFZ." width="75%">
   <img src="screenshots/uniclr.png" alt="FGC Scoreboard on UNICLR." width="75%">
 </p>
-
-## Todo
-- [X] Add lower thirds for commentators
-- [X] Create GIFs to show case animations
-- [X] Explore Smash/Challonge/Toornament integration
-
-Pull requests are more than welcomed!
 
 ## License
 Usage is provided under the [MIT License](http://http//opensource.org/licenses/mit-license.php). See LICENSE for the full details.
