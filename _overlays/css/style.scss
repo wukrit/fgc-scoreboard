@@ -1,10 +1,11 @@
 @font-face {
-  src: url('../fonts/ValorantFont.ttf');
-  font-family: "Valorant";
+  src: url('../fonts/ArchivoBlack-Regular.ttf');
+  font-family: "Archivo Black";
 }
 
-$main-color: rgba(0, 0, 0, 0.75);
-$accent-color: #c40a18;
+$main-color: rgba(0, 0, 0, 0.85);
+$p1-accent: #ff4444;
+$p2-accent: #4488ff;
 $font-color: white;
 $team-color: #e5e5e5;
 
@@ -18,7 +19,8 @@ body {
   text-transform: uppercase;
   color: $font-color;
   text-shadow: 2px 2px 3px DimGray;
-  font-family: "Valorant";
+  font-family: "Archivo Black", "Arial Black", sans-serif;
+  letter-spacing: 0.05em;
 
   .scoreboard {
     position: absolute;
@@ -96,13 +98,13 @@ body {
 
   #roundBG {
     background-color: $main-color;
-    outline: 1px solid $accent-color;
+    outline: 3px solid $p1-accent;
     width: 240px;
     height: 36px;
     position: absolute;
     top: 0;
     left: 840px;
-    filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.6));
+    filter: drop-shadow(3px 3px 0 rgba(0, 0, 0, 0.8));
     transform: perspective(100px) rotateX(-18deg);
   }
 
@@ -128,26 +130,41 @@ body {
 
   .playerBG {
     background-color: $main-color;
-    outline: 1px solid $accent-color;
     width: 375px;
     height: 100%;
     position: absolute;
-    filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.6));
+    filter: drop-shadow(3px 3px 0 rgba(0, 0, 0, 0.8));
+  }
+
+  #p1PlayerBG {
+    outline: 3px solid $p1-accent;
+    left: 50px;
+    transform: skewX(20deg);
+  }
+
+  #p2PlayerBG {
+    outline: 3px solid $p2-accent;
+    transform: skewX(-20deg);
   }
 
   .scoreBG {
-    background-color: $accent-color;
-    outline: 1px solid black;
+    outline: 3px solid black;
     width: 49px;
     height: calc(100% - 4px);
     position: absolute;
     top: 2px;
-    filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.6));
+    filter: drop-shadow(3px 3px 0 rgba(0, 0, 0, 0.8));
   }
 
-  #p1PlayerBG {
-    left: 50px;
+  #p1ScoreBG {
+    background-color: $p1-accent;
     transform: skewX(20deg);
+  }
+
+  #p2ScoreBG {
+    background-color: $p2-accent;
+    left: 375px;
+    transform: skewX(-20deg);
   }
 
   .player1-animation {
@@ -155,27 +172,14 @@ body {
     animation-duration: 0.26s;
   }
 
-  #p1ScoreBG {
-    transform: skewX(20deg);
-  }
-
   .p1s-animation {
     animation-name: p1score;
     animation-duration: 0.26s;
   }
 
-  #p2PlayerBG {
-    transform: skewX(-20deg);
-  }
-
   .player2-animation {
     animation-name: player2slidein;
     animation-duration: 0.26s;
-  }
-
-  #p2ScoreBG {
-    left: 375px;
-    transform: skewX(-20deg);
   }
 
   .p2s-animation {

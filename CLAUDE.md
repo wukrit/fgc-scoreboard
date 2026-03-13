@@ -49,7 +49,8 @@ The scoreboard repositions itself vertically based on the selected game (to avoi
 - Pico CSS v2.1.1 classless variant (`css/pico.classless.min.css`) — used by controller.html only
 - jQuery 3.3.1 (`_overlays/js/jquery-3.3.1.min.js`)
 - GreenSock/TweenMax (`_overlays/js/greensock-js/`)
-- Valorant font (`_overlays/fonts/ValorantFont.ttf`)
+- Archivo Black font (`_overlays/fonts/ArchivoBlack-Regular.ttf`) — used by overlay
+- Valorant font (`_overlays/fonts/ValorantFont.ttf`) — legacy, kept for reference
 
 ## Development
 
