@@ -18,7 +18,18 @@ Remote controller (`controller.html`) → writes JSON to npoint.io → `_overlay
 - **`_overlays/js/scoreboard.js`** — Core logic: polls npoint.io JSON endpoint, parses data, handles game-specific layout adjustments, animates score/name/round changes with TweenMax, manages logo rotation.
 - **`_overlays/css/style.scss`** — SCSS source with customizable variables at the top (`$main-color`, `$accent-color`, `$font-color`, `$team-color`). Must be compiled to `style.css`.
 - **`_overlays/css/style.css`** — Compiled CSS (what the overlay actually loads).
-- **`controller.html`** — Mobile-friendly web form for score entry. Hosted on GitHub Pages. Reads/writes to npoint.io JSON bin.
+- **`controller.html`** — Mobile-friendly web form for score entry. Hosted on GitHub Pages. Reads/writes to npoint.io JSON bin. Requires `?bin=<npoint_id>` URL parameter.
+- **`_overlays/scoreboard.xml`** — OBS/StreamControl-compatible source config file.
+- **`docs/`** — Project documentation: brainstorms, implementation plans, and solution docs (e.g., the StreamControl-to-npoint.io migration).
+
+### Important Implementation Details
+
+- **Scores are sent as strings** from the controller (`String(input.value)`). The overlay compares scores as text to detect changes and trigger animations. Sending numbers instead of strings will break change detection.
+- **Both `controller.html` and `scoreboard.html` require a `?bin=<npoint_id>` URL parameter** pointing to an npoint.io JSON bin. Create a free bin at https://www.npoint.io/.
+
+### Supported Games
+
+BBCF, BBTAG, DBFZ, GGXRD, KOFXIV, MVCI, SF6, SFVCE, TEKKEN7, UMVC3, UNICLR, USF4. Games not listed in an adjustment group default to `adjust2`.
 
 ### Game-Specific Layout
 

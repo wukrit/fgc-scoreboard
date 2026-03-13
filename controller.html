@@ -235,32 +235,47 @@
 		var urlParams = new URLSearchParams(window.location.search);
 		var binId = urlParams.get('bin');
 		var apiUrl = binId ? 'https://api.npoint.io/' + binId : null;
+		var localMode = !apiUrl;
 
-		if (!apiUrl) {
-			document.getElementById('no-bin-warning').style.display = 'block';
+		if (localMode) {
+			console.log('LOCAL MODE');
+			var warning = document.getElementById('no-bin-warning');
+			warning.textContent = 'Local mode \u2014 data saved to this browser only.';
+			warning.style.display = 'block';
 		}
 
-		// Load current state from bin on page load
+		function populateForm(data) {
+			document.getElementById('p1Name').value = data.p1Name || '';
+			document.getElementById('p1Team').value = data.p1Team || '';
+			document.getElementById('p1Score').value = data.p1Score || '0';
+			document.getElementById('p2Name').value = data.p2Name || '';
+			document.getElementById('p2Team').value = data.p2Team || '';
+			document.getElementById('p2Score').value = data.p2Score || '0';
+			document.getElementById('round').value = data.round || '';
+			document.getElementById('game').value = data.game || '';
+		}
+
+		// Load current state on page load
 		if (apiUrl) {
 			showStatus('Loading...', 'loading');
 			fetch(apiUrl)
 				.then(function(r) { return r.json(); })
 				.then(function(data) {
-					if (data.p1Name !== undefined) {
-						document.getElementById('p1Name').value = data.p1Name || '';
-						document.getElementById('p1Team').value = data.p1Team || '';
-						document.getElementById('p1Score').value = data.p1Score || '0';
-						document.getElementById('p2Name').value = data.p2Name || '';
-						document.getElementById('p2Team').value = data.p2Team || '';
-						document.getElementById('p2Score').value = data.p2Score || '0';
-						document.getElementById('round').value = data.round || '';
-						document.getElementById('game').value = data.game || '';
-					}
+					if (data.p1Name !== undefined) populateForm(data);
 					showStatus('Loaded', 'ok');
 				})
 				.catch(function() {
 					showStatus('Could not load data from bin', 'err');
 				});
+		} else {
+			var stored = localStorage.getItem('fgc-scoreboard-data');
+			if (stored) {
+				try {
+					populateForm(JSON.parse(stored));
+				} catch(e) {
+					console.warn('Failed to parse localStorage data:', e);
+				}
+			}
 		}
 
 		function getFormData() {
@@ -284,15 +299,21 @@
 		}
 
 		function save() {
-			if (!apiUrl) {
-				showStatus('No bin configured', 'err');
+			var formData = getFormData();
+			if (localMode) {
+				try {
+					localStorage.setItem('fgc-scoreboard-data', JSON.stringify(formData));
+					showStatus('Saved (local)', 'ok');
+				} catch(e) {
+					showStatus('Save failed: ' + e.message, 'err');
+				}
 				return;
 			}
 			showStatus('Saving...', 'loading');
 			fetch(apiUrl, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(getFormData())
+				body: JSON.stringify(formData)
 			})
 			.then(function(r) {
 				if (!r.ok) throw new Error('HTTP ' + r.status);

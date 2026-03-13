@@ -2,47 +2,77 @@ window.onload = init;
 
 function init(){
 
-	var xhr = new XMLHttpRequest(); //AJAX data request sent to server(in this case server being local json file)
 	var urlParams = new URLSearchParams(window.location.search);
 	var binId = urlParams.get('bin');
-	if (!binId) {
-		console.error('Missing required ?bin= URL parameter');
-		return;
-	}
-	var streamJSON = 'https://api.npoint.io/' + binId;
 	var scObj; //variable to hold data extracted from parsed json
 	var startup = true; //flag for if looping functions are on their first pass or not
 	var animated = false; //flag for if scoreboard animation has run or not
-	var cBust = 0; //variable to hold cache busting value
 	var game; //variable to hold game value from streamcontrol dropdown
 	var p1Wrap = $('#p1Wrapper'); //variables to shortcut copypasting text resize functions
 	var p2Wrap = $('#p2Wrapper');
 	var rdResize = $('#round');
 
-	xhr.overrideMimeType('application/json'); //explicitly declares that json should always be processed as a json filetype
+	if (!binId) {
+		// LOCAL MODE — read from localStorage, sync via storage event
+		console.log('LOCAL MODE');
 
-	function pollJSON() {
-		xhr.open('GET',streamJSON+'?v='+cBust,true); //string query-style cache busting, forces non-cached new version of json to be opened each time
-		xhr.send();
-		cBust++;
-	}
+		var stored = localStorage.getItem('fgc-scoreboard-data');
+		if (stored) {
+			try { scObj = JSON.parse(stored); }
+			catch(e) { console.warn('Failed to parse localStorage data:', e); }
+		}
 
-	pollJSON();
-	setInterval(function(){pollJSON();},1000); //runs polling function once per second
-
-	xhr.onreadystatechange = parseJSON; //runs parseJSON function every time XMLHttpRequest ready state changes
-
-	function parseJSON() {
-		if(xhr.readyState === 4){ //loads data from json into scObj variable each time that XMLHttpRequest ready state reports back as '4'(successful)
-			try {
-				scObj = JSON.parse(xhr.responseText);
-			} catch(e) {
-				return; //silently skip this cycle on parse error (e.g. network failure returning non-JSON)
+		// Listen for cross-tab updates via storage event
+		window.addEventListener('storage', function(evt) {
+			if (evt.key === 'fgc-scoreboard-data' && evt.newValue) {
+				try {
+					scObj = JSON.parse(evt.newValue);
+				} catch(e) {
+					console.warn('Failed to parse localStorage data:', e);
+					return;
+				}
+				scoreboard();
 			}
-			if(animated == true){
-				scoreboard(); //runs scoreboard function each time readyState reports back as 4 as long as it has already run once and changed animated value to false
+		});
+
+		// Kick off first render if we have data
+		if (scObj) {
+			setTimeout(scoreboard, 300);
+		}
+
+	} else {
+		// REMOTE MODE — poll npoint.io via AJAX
+		var xhr = new XMLHttpRequest();
+		var streamJSON = 'https://api.npoint.io/' + binId;
+		var cBust = 0;
+
+		xhr.overrideMimeType('application/json');
+
+		function pollJSON() {
+			xhr.open('GET',streamJSON+'?v='+cBust,true);
+			xhr.send();
+			cBust++;
+		}
+
+		pollJSON();
+		setInterval(function(){pollJSON();},1000);
+
+		xhr.onreadystatechange = parseJSON;
+
+		function parseJSON() {
+			if(xhr.readyState === 4){
+				try {
+					scObj = JSON.parse(xhr.responseText);
+				} catch(e) {
+					return;
+				}
+				if(animated == true){
+					scoreboard();
+				}
 			}
 		}
+
+		setTimeout(scoreboard, 300);
 	}
 
 	function scoreboard(){
@@ -90,8 +120,6 @@ function init(){
 			getData(); //if startup is not set to true, only the getData function is run each time scoreboard function runs
 		}
 	}
-
-	setTimeout(scoreboard,300);
 
 	function getData(){
 
