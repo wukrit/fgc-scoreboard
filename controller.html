@@ -375,7 +375,7 @@
 		var urlParams = new URLSearchParams(window.location.search);
 		var binId = urlParams.get('bin');
 		var apiUrl = binId ? 'https://api.npoint.io/' + binId : null;
-		var lanMode = !binId && window.location.protocol === 'http:';
+		var lanMode = !binId && window.location.protocol !== 'file:';
 		var localMode = !apiUrl && !lanMode;
 
 		if (lanMode) {

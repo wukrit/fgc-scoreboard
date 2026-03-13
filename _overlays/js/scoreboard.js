@@ -4,7 +4,7 @@ function init(){
 
 	var urlParams = new URLSearchParams(window.location.search);
 	var binId = urlParams.get('bin');
-	var lanMode = !binId && window.location.protocol === 'http:';
+	var lanMode = !binId && window.location.protocol !== 'file:';
 	var scObj; //variable to hold data extracted from parsed json
 	var startup = true; //flag for if looping functions are on their first pass or not
 	var animated = false; //flag for if scoreboard animation has run or not
@@ -40,9 +40,7 @@ function init(){
 				} catch(e) {
 					return;
 				}
-				if(animated == true){
-					scoreboard();
-				}
+				scoreboard();
 			}
 		}
 
@@ -73,9 +71,7 @@ function init(){
 				} catch(e) {
 					return;
 				}
-				if (animated == true) {
-					scoreboard();
-				}
+				scoreboard();
 			}
 		};
 
@@ -111,6 +107,7 @@ function init(){
 	}
 
 	function scoreboard(){
+		if(!scObj) return;
 
 		if(startup == true){
 			game = scObj['game'];

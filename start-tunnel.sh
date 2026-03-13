@@ -13,6 +13,21 @@ fi
 command -v python3 >/dev/null 2>&1 || { echo "python3 required"; exit 1; }
 command -v cloudflared >/dev/null 2>&1 || { echo "cloudflared required — brew install cloudflared"; exit 1; }
 
+# Cleanup on exit
+cleanup() {
+  echo ""
+  echo "Shutting down..."
+  kill "$TUNNEL_PID" 2>/dev/null || true
+  kill "$SERVER_PID" 2>/dev/null || true
+  # Give processes 3 seconds to exit gracefully
+  sleep 3
+  kill -9 "$TUNNEL_PID" 2>/dev/null || true
+  kill -9 "$SERVER_PID" 2>/dev/null || true
+  wait 2>/dev/null || true
+  echo "Done."
+}
+trap cleanup INT TERM EXIT
+
 # Start server in background
 python3 server.py --port "$PORT" &
 SERVER_PID=$!
@@ -24,29 +39,17 @@ echo ""
 echo "Starting Cloudflare Tunnel..."
 echo ""
 
-# Start tunnel (foreground so Ctrl+C stops everything)
-cloudflared tunnel run fgc-scoreboard &
+# Start tunnel in background
+cloudflared tunnel &
 TUNNEL_PID=$!
 
 echo ""
 echo "FGC Scoreboard is live!"
-echo "  Controller: https://fgc.sukritwalia.com/controller.html"
-echo "  Overlay:    https://fgc.sukritwalia.com/_overlays/scoreboard.html"
+echo "  Controller: https://fgc-scoreboard.sukritwalia.com/controller.html"
+echo "  Overlay:    https://fgc-scoreboard.sukritwalia.com/_overlays/scoreboard.html"
 echo ""
 echo "Press Ctrl+C to stop."
 echo ""
-
-# Cleanup on exit
-cleanup() {
-  echo ""
-  echo "Shutting down..."
-  kill "$TUNNEL_PID" 2>/dev/null
-  kill "$SERVER_PID" 2>/dev/null
-  wait "$TUNNEL_PID" 2>/dev/null
-  wait "$SERVER_PID" 2>/dev/null
-  echo "Done."
-}
-trap cleanup INT TERM
 
 # Wait for either process to exit
 wait

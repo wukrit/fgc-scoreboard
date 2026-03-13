@@ -4,6 +4,7 @@
 import argparse
 import json
 import os
+import signal
 import socket
 import tempfile
 from http.server import HTTPServer, SimpleHTTPRequestHandler
@@ -61,10 +62,11 @@ class ScoreboardHandler(SimpleHTTPRequestHandler):
             fd, tmp = tempfile.mkstemp(dir='.', suffix='.tmp')
             try:
                 os.write(fd, body)
+            finally:
                 os.close(fd)
+            try:
                 os.replace(tmp, SCOREBOARD_FILE)
             except Exception:
-                os.close(fd)
                 os.unlink(tmp)
                 self.send_response(500)
                 self.end_headers()
@@ -76,6 +78,12 @@ class ScoreboardHandler(SimpleHTTPRequestHandler):
         else:
             self.send_response(404)
             self.end_headers()
+
+    def handle(self):
+        try:
+            super().handle()
+        except BrokenPipeError:
+            pass
 
     def log_message(self, format, *args):
         # Only log POST requests to reduce noise during polling
@@ -101,5 +109,18 @@ if __name__ == '__main__':
     print(f'Overlay:    http://{ip}:{port}/_overlays/scoreboard.html')
     print(f'\nListening on 0.0.0.0:{port} (Ctrl+C to stop)\n')
 
+    HTTPServer.allow_reuse_address = True
     server = HTTPServer(('0.0.0.0', port), ScoreboardHandler)
-    server.serve_forever()
+
+    def handle_signal(sig, frame):
+        server.shutdown()
+
+    signal.signal(signal.SIGTERM, handle_signal)
+
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
+        print('\nServer stopped.')
