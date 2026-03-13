@@ -25,6 +25,52 @@ Best for in-person tournaments. Requires Python 3.
 
 To use a different port: `python3 server.py --port 9090`
 
+### Tunnel Mode (Cloudflare Tunnel)
+
+Best for sharing your local server over the internet with a stable URL. Requires [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/get-started/).
+
+**One-time setup:**
+
+1. Install cloudflared:
+   ```
+   brew install cloudflared
+   ```
+2. Login to your Cloudflare account:
+   ```
+   cloudflared tunnel login
+   ```
+3. Create a named tunnel:
+   ```
+   cloudflared tunnel create fgc-scoreboard
+   ```
+4. Create a config file at `~/.cloudflared/config.yml`:
+   ```yaml
+   tunnel: fgc-scoreboard
+   credentials-file: /path/to/.cloudflared/<TUNNEL_ID>.json
+
+   ingress:
+     - hostname: fgc.yourdomain.com
+       service: http://localhost:8080
+     - service: http_status:404
+   ```
+   Replace `<TUNNEL_ID>` with the ID printed from step 3, and `fgc.yourdomain.com` with your subdomain.
+5. Create the DNS record:
+   ```
+   cloudflared tunnel route dns fgc-scoreboard fgc.yourdomain.com
+   ```
+
+**Running:**
+
+```
+./start-tunnel.sh
+```
+
+This starts both `server.py` and the Cloudflare Tunnel. Your URLs will be:
+- **Controller:** `https://fgc.yourdomain.com/controller.html`
+- **Overlay:** `https://fgc.yourdomain.com/_overlays/scoreboard.html`
+
+Press Ctrl+C to stop both.
+
 ### Remote Mode (Internet Required)
 
 Best for online tournaments or when the controller and streaming PC aren't on the same network.
