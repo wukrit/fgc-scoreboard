@@ -4,6 +4,7 @@ function init(){
 
 	var urlParams = new URLSearchParams(window.location.search);
 	var binId = urlParams.get('bin');
+	var lanMode = !binId && window.location.protocol === 'http:';
 	var scObj; //variable to hold data extracted from parsed json
 	var startup = true; //flag for if looping functions are on their first pass or not
 	var animated = false; //flag for if scoreboard animation has run or not
@@ -12,36 +13,9 @@ function init(){
 	var p2Wrap = $('#p2Wrapper');
 	var rdResize = $('#round');
 
-	if (!binId) {
-		// LOCAL MODE — read from localStorage, sync via storage event
-		console.log('LOCAL MODE');
-
-		var stored = localStorage.getItem('fgc-scoreboard-data');
-		if (stored) {
-			try { scObj = JSON.parse(stored); }
-			catch(e) { console.warn('Failed to parse localStorage data:', e); }
-		}
-
-		// Listen for cross-tab updates via storage event
-		window.addEventListener('storage', function(evt) {
-			if (evt.key === 'fgc-scoreboard-data' && evt.newValue) {
-				try {
-					scObj = JSON.parse(evt.newValue);
-				} catch(e) {
-					console.warn('Failed to parse localStorage data:', e);
-					return;
-				}
-				scoreboard();
-			}
-		});
-
-		// Kick off first render if we have data
-		if (scObj) {
-			setTimeout(scoreboard, 300);
-		}
-
-	} else {
+	if (binId) {
 		// REMOTE MODE — poll npoint.io via AJAX
+		console.log('REMOTE MODE');
 		var xhr = new XMLHttpRequest();
 		var streamJSON = 'https://api.npoint.io/' + binId;
 		var cBust = 0;
@@ -73,6 +47,67 @@ function init(){
 		}
 
 		setTimeout(scoreboard, 300);
+
+	} else if (lanMode) {
+		// LAN MODE — poll local server via AJAX
+		console.log('LAN MODE');
+		var lanXhr = new XMLHttpRequest();
+		var lanURL = window.location.origin + '/scoreboard.json';
+		var lanBust = 0;
+
+		lanXhr.overrideMimeType('application/json');
+
+		function pollLAN() {
+			lanXhr.open('GET', lanURL + '?v=' + lanBust, true);
+			lanXhr.send();
+			lanBust++;
+		}
+
+		pollLAN();
+		setInterval(function(){ pollLAN(); }, 1000);
+
+		lanXhr.onreadystatechange = function() {
+			if (lanXhr.readyState === 4) {
+				try {
+					scObj = JSON.parse(lanXhr.responseText);
+				} catch(e) {
+					return;
+				}
+				if (animated == true) {
+					scoreboard();
+				}
+			}
+		};
+
+		setTimeout(scoreboard, 300);
+
+	} else {
+		// LOCAL MODE — read from localStorage, sync via storage event
+		console.log('LOCAL MODE');
+
+		var stored = localStorage.getItem('fgc-scoreboard-data');
+		if (stored) {
+			try { scObj = JSON.parse(stored); }
+			catch(e) { console.warn('Failed to parse localStorage data:', e); }
+		}
+
+		// Listen for cross-tab updates via storage event
+		window.addEventListener('storage', function(evt) {
+			if (evt.key === 'fgc-scoreboard-data' && evt.newValue) {
+				try {
+					scObj = JSON.parse(evt.newValue);
+				} catch(e) {
+					console.warn('Failed to parse localStorage data:', e);
+					return;
+				}
+				scoreboard();
+			}
+		});
+
+		// Kick off first render if we have data
+		if (scObj) {
+			setTimeout(scoreboard, 300);
+		}
 	}
 
 	function scoreboard(){

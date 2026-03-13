@@ -235,9 +235,15 @@
 		var urlParams = new URLSearchParams(window.location.search);
 		var binId = urlParams.get('bin');
 		var apiUrl = binId ? 'https://api.npoint.io/' + binId : null;
-		var localMode = !apiUrl;
+		var lanMode = !binId && window.location.protocol === 'http:';
+		var localMode = !apiUrl && !lanMode;
 
-		if (localMode) {
+		if (lanMode) {
+			console.log('LAN MODE');
+			var warning = document.getElementById('no-bin-warning');
+			warning.textContent = 'LAN mode \u2014 connected to ' + window.location.host;
+			warning.style.display = 'block';
+		} else if (localMode) {
 			console.log('LOCAL MODE');
 			var warning = document.getElementById('no-bin-warning');
 			warning.textContent = 'Local mode \u2014 data saved to this browser only.';
@@ -266,6 +272,17 @@
 				})
 				.catch(function() {
 					showStatus('Could not load data from bin', 'err');
+				});
+		} else if (lanMode) {
+			showStatus('Loading...', 'loading');
+			fetch(window.location.origin + '/scoreboard.json')
+				.then(function(r) { return r.json(); })
+				.then(function(data) {
+					if (data.p1Name !== undefined) populateForm(data);
+					showStatus('Loaded', 'ok');
+				})
+				.catch(function() {
+					showStatus('Could not load data from server', 'err');
 				});
 		} else {
 			var stored = localStorage.getItem('fgc-scoreboard-data');
@@ -309,18 +326,19 @@
 				}
 				return;
 			}
+			var saveUrl = lanMode ? window.location.origin + '/scoreboard.json' : apiUrl;
 			showStatus('Saving...', 'loading');
-			fetch(apiUrl, {
+			fetch(saveUrl, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(formData)
 			})
 			.then(function(r) {
 				if (!r.ok) throw new Error('HTTP ' + r.status);
-				showStatus('Saved', 'ok');
+				showStatus(lanMode ? 'Saved (LAN)' : 'Saved', 'ok');
 			})
 			.catch(function(e) {
-				showStatus('Save failed: ' + e.message, 'err');
+				showStatus('Save failed \u2014 check server connection', 'err');
 			});
 		}
 

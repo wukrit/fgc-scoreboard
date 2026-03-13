@@ -10,7 +10,11 @@ FGC Scoreboard is a pure HTML/CSS/JS scoreboard overlay for fighting game tourna
 
 ### Data Flow
 
-Remote controller (`controller.html`) → writes JSON to npoint.io → `_overlays/js/scoreboard.js` polls this JSON every 1s via AJAX → updates the HTML overlay with animated transitions.
+Three sync modes, auto-detected by priority:
+
+1. **npoint.io (remote)** — `?bin=<id>` URL parameter present → controller POSTs to npoint.io, overlay polls it every 1s
+2. **LAN server** — Page served over `http:` without `?bin=` → controller POSTs to own origin, overlay polls own origin every 1s
+3. **localStorage** — `file://` protocol, no `?bin=` → controller writes localStorage, overlay syncs via storage event
 
 ### Key Files
 
@@ -18,14 +22,16 @@ Remote controller (`controller.html`) → writes JSON to npoint.io → `_overlay
 - **`_overlays/js/scoreboard.js`** — Core logic: polls npoint.io JSON endpoint, parses data, handles game-specific layout adjustments, animates score/name/round changes with TweenMax, manages logo rotation.
 - **`_overlays/css/style.scss`** — SCSS source with customizable variables at the top (`$main-color`, `$accent-color`, `$font-color`, `$team-color`). Must be compiled to `style.css`.
 - **`_overlays/css/style.css`** — Compiled CSS (what the overlay actually loads).
-- **`controller.html`** — Mobile-friendly web form for score entry. Hosted on GitHub Pages. Reads/writes to npoint.io JSON bin. Requires `?bin=<npoint_id>` URL parameter.
+- **`controller.html`** — Mobile-friendly web form for score entry. Hosted on GitHub Pages (remote mode) or served by `server.py` (LAN mode).
+- **`server.py`** — Zero-dependency Python 3 HTTP server for LAN tournaments. Serves static files + JSON endpoint. Run with `python3 server.py [--port PORT]`.
 - **`_overlays/scoreboard.xml`** — OBS/StreamControl-compatible source config file.
 - **`docs/`** — Project documentation: brainstorms, implementation plans, and solution docs (e.g., the StreamControl-to-npoint.io migration).
 
 ### Important Implementation Details
 
 - **Scores are sent as strings** from the controller (`String(input.value)`). The overlay compares scores as text to detect changes and trigger animations. Sending numbers instead of strings will break change detection.
-- **Both `controller.html` and `scoreboard.html` require a `?bin=<npoint_id>` URL parameter** pointing to an npoint.io JSON bin. Create a free bin at https://www.npoint.io/.
+- **Remote mode requires a `?bin=<npoint_id>` URL parameter** on both `controller.html` and `scoreboard.html`. Create a free bin at https://www.npoint.io/.
+- **LAN mode requires no URL parameters** — just serve via `python3 server.py` and open the printed URLs.
 
 ### Supported Games
 
@@ -52,7 +58,17 @@ No build system or package manager. To compile SCSS → CSS, use any Sass compil
 sass _overlays/css/style.scss _overlays/css/style.css
 ```
 
-To test, open `_overlays/scoreboard.html?bin=<npoint_id>` in a browser. Use the controller or edit the npoint.io bin directly to simulate input.
+To test remote mode, open `_overlays/scoreboard.html?bin=<npoint_id>` in a browser. Use the controller or edit the npoint.io bin directly to simulate input.
+
+### LAN Mode (Tournament Use)
+
+For LAN tournaments without internet:
+
+```
+python3 server.py
+```
+
+This prints controller and overlay URLs with the LAN IP. Open the controller on a phone and point OBS to the overlay URL. No `?bin=` parameter needed — mode is auto-detected.
 
 ## Customization
 
