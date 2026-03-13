@@ -20,7 +20,6 @@ body {
   color: $font-color;
   text-shadow: 2px 2px 3px DimGray;
   font-family: "Archivo Black", "Arial Black", sans-serif;
-  letter-spacing: 0.05em;
 
   .scoreboard {
     position: absolute;
@@ -44,7 +43,7 @@ body {
   }
 
   #p1Wrapper {
-    left: 100px;
+    left: 348px;
   }
 
   #p2Wrapper {
