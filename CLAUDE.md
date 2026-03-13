@@ -10,17 +10,15 @@ FGC Scoreboard is a pure HTML/CSS/JS scoreboard overlay for fighting game tourna
 
 ### Data Flow
 
-StreamControl app (`sc/StreamControl.exe`) → writes `sc/streamcontrol.json` → `_overlays/js/scoreboard.js` polls this JSON every 500ms via AJAX → updates the HTML overlay with animated transitions.
+Remote controller (`controller.html`) → writes JSON to npoint.io → `_overlays/js/scoreboard.js` polls this JSON every 1s via AJAX → updates the HTML overlay with animated transitions.
 
 ### Key Files
 
-- **`_overlays/scoreboard.html`** — Main overlay loaded as a browser source in OBS/streaming software. Contains animation config variables (timing, offsets, distances) as inline `<script>` vars.
-- **`_overlays/js/scoreboard.js`** — Core logic: polls `streamcontrol.json`, parses data, handles game-specific layout adjustments, animates score/name/round changes with TweenMax, manages logo rotation.
+- **`_overlays/scoreboard.html`** — Main overlay loaded as a browser source in OBS/streaming software. Contains animation config variables (timing, offsets, distances) as inline `<script>` vars. Requires `?bin=<npoint_id>` URL parameter.
+- **`_overlays/js/scoreboard.js`** — Core logic: polls npoint.io JSON endpoint, parses data, handles game-specific layout adjustments, animates score/name/round changes with TweenMax, manages logo rotation.
 - **`_overlays/css/style.scss`** — SCSS source with customizable variables at the top (`$main-color`, `$accent-color`, `$font-color`, `$team-color`). Must be compiled to `style.css`.
 - **`_overlays/css/style.css`** — Compiled CSS (what the overlay actually loads).
-- **`sc/streamcontrol.json`** — JSON output from StreamControl containing: `p1Name`, `p2Name`, `p1Team`, `p2Team`, `p1Score`, `p2Score`, `round`, `game`, commentary fields (`cTitle1`, `cTitle2`), and misc text fields.
-- **`sc/layout.xml`** — Defines the StreamControl UI (tabs, fields, buttons, dropdowns).
-- **`sc/players.csv`** / **`sc/round.csv`** — Autocomplete data for StreamControl fields.
+- **`controller.html`** — Mobile-friendly web form for score entry. Hosted on GitHub Pages. Reads/writes to npoint.io JSON bin.
 
 ### Game-Specific Layout
 
@@ -28,8 +26,6 @@ The scoreboard repositions itself vertically based on the selected game (to avoi
 1. **Shift down** (`adjust1`): BBTAG, SFVCE, TEKKEN7, UNICLR
 2. **Shift text up** (`adjust2`, default): BBCF, DBFZ, GGXRD, KOFXIV, MVCI, UMVC3
 3. **Custom offset** (`adjust3`): USF4
-
-Adding a new game requires updating: `sc/layout.xml` (comboBox), `scoreboard.js` (position logic), and the README.
 
 ### Dependencies (vendored, no package manager)
 
@@ -45,7 +41,7 @@ No build system or package manager. To compile SCSS → CSS, use any Sass compil
 sass _overlays/css/style.scss _overlays/css/style.css
 ```
 
-To test, open `_overlays/scoreboard.html` in a browser. Edit `sc/streamcontrol.json` directly to simulate StreamControl input.
+To test, open `_overlays/scoreboard.html?bin=<npoint_id>` in a browser. Use the controller or edit the npoint.io bin directly to simulate input.
 
 ## Customization
 

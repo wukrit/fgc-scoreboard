@@ -2,9 +2,9 @@
 FGC Scoreboard is an html and css scoreboard for fighting game tournament streams. It uses absolutely no images (except for tournament/company logos which I've included a generic PSD for) and absolutely no webm files for animations.
 
 ## How FGC Scoreboard Works
-To get started with FGC Scoreboard just open your streaming platform of choice, add a **broswer source**, and then navigate to wherever you saved the **scoreboard.html** file.
+To get started with FGC Scoreboard just open your streaming platform of choice, add a **browser source**, and then navigate to wherever you saved the **scoreboard.html** file with a `?bin=<npoint_id>` parameter.
 
-The scoreboard is built to work with StreamControl (included in the repo). All of your data entry should happen through that app including:
+All data entry happens through the **controller** — a mobile-friendly web form hosted on GitHub Pages. Use it to update:
 ```
 * Player Names
 * Team Names
@@ -13,9 +13,11 @@ The scoreboard is built to work with StreamControl (included in the repo). All o
 * Game
 ```
 
+The controller writes to a remote JSON store (npoint.io), and the overlay polls it every second for updates.
+
 To change any of the colors, the font, the opacity, etc. just open the scss file and tweak the variables at the top. There's no need to jump into the rest of the styling unless you want to change something more drastic.
 
-Finally, when you select a game (and hit save) the layout will adjust so that the scores and logos don't cover important guages.
+Finally, when you select a game (and hit save) the layout will adjust so that the scores and logos don't cover important gauges.
 #### Supported Games
 ```
 * BBCF
@@ -34,7 +36,7 @@ Finally, when you select a game (and hit save) the layout will adjust so that th
 ## Drop Me a Line
 If you found this at all useful, or have some suggestions, please let me know! You can drop me a line on twitter ([@tarikfayad](https://twitter.com/tarikfayad)), find me on Twitch ([ImpurestClub](https://www.twitch.tv/impurestclub/)), or ping me on my Discord server ([Link](https://discord.gg/ykj8tsN)).
 
-Also, feel free to check out a much bigger project I've been working on called **WASD**. It's a search enginge for teammates/sparring partners along with a pretty comprehensive tournament calendar. You can find it here: https://wasdgaming.gg
+Also, feel free to check out a much bigger project I've been working on called **WASD**. It's a search engine for teammates/sparring partners along with a pretty comprehensive tournament calendar. You can find it here: https://wasdgaming.gg
 
 If you've really found this useful, feel free to <br>
 <a href="https://www.buymeacoffee.com/tarik" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: 41px !important;width: 174px !important;box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;-webkit-box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;" ></a>

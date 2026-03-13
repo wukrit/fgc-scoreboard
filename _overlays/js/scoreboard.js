@@ -5,9 +5,11 @@ function init(){
 	var xhr = new XMLHttpRequest(); //AJAX data request sent to server(in this case server being local json file)
 	var urlParams = new URLSearchParams(window.location.search);
 	var binId = urlParams.get('bin');
-	var streamJSON = binId
-		? 'https://api.npoint.io/' + binId
-		: '../sc/streamcontrol.json'; //fallback to local for backwards compat
+	if (!binId) {
+		console.error('Missing required ?bin= URL parameter');
+		return;
+	}
+	var streamJSON = 'https://api.npoint.io/' + binId;
 	var scObj; //variable to hold data extracted from parsed json
 	var startup = true; //flag for if looping functions are on their first pass or not
 	var animated = false; //flag for if scoreboard animation has run or not
