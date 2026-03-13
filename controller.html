@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>FGC Scoreboard Controller</title>
+	<style>
+		* { box-sizing: border-box; margin: 0; padding: 0; }
+		body {
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+			background: #1a1a2e;
+			color: #e0e0e0;
+			padding: 16px;
+			max-width: 480px;
+			margin: 0 auto;
+		}
+		h1 {
+			font-size: 18px;
+			text-align: center;
+			margin-bottom: 16px;
+			color: #fff;
+		}
+		.player-section {
+			background: #16213e;
+			border: 1px solid #0f3460;
+			border-radius: 8px;
+			padding: 12px;
+			margin-bottom: 12px;
+		}
+		.player-section h2 {
+			font-size: 14px;
+			color: #c40a18;
+			margin-bottom: 8px;
+		}
+		.field-row {
+			display: flex;
+			gap: 8px;
+			margin-bottom: 8px;
+		}
+		.field-row:last-child { margin-bottom: 0; }
+		.field {
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+		}
+		.field label {
+			font-size: 11px;
+			color: #888;
+			margin-bottom: 2px;
+			text-transform: uppercase;
+		}
+		.field input, .field select {
+			background: #0f3460;
+			border: 1px solid #1a4a7a;
+			border-radius: 4px;
+			color: #fff;
+			padding: 8px;
+			font-size: 16px;
+			width: 100%;
+		}
+		.field input:focus, .field select:focus {
+			outline: none;
+			border-color: #c40a18;
+		}
+		.field-score { max-width: 70px; }
+		.field-score input {
+			text-align: center;
+			font-size: 20px;
+			font-weight: bold;
+		}
+		.match-section {
+			background: #16213e;
+			border: 1px solid #0f3460;
+			border-radius: 8px;
+			padding: 12px;
+			margin-bottom: 12px;
+		}
+		.match-section h2 {
+			font-size: 14px;
+			color: #c40a18;
+			margin-bottom: 8px;
+		}
+		.button-row {
+			display: flex;
+			gap: 8px;
+			margin-bottom: 12px;
+		}
+		button {
+			flex: 1;
+			padding: 12px 8px;
+			border: none;
+			border-radius: 6px;
+			font-size: 14px;
+			font-weight: bold;
+			cursor: pointer;
+			text-transform: uppercase;
+			touch-action: manipulation;
+		}
+		.btn-save {
+			background: #c40a18;
+			color: #fff;
+		}
+		.btn-save:active { background: #a00814; }
+		.btn-swap {
+			background: #0f3460;
+			color: #fff;
+		}
+		.btn-swap:active { background: #1a4a7a; }
+		.btn-reset {
+			background: #333;
+			color: #fff;
+		}
+		.btn-reset:active { background: #555; }
+		.btn-clear {
+			background: #333;
+			color: #fff;
+		}
+		.btn-clear:active { background: #555; }
+		#status {
+			text-align: center;
+			font-size: 13px;
+			padding: 8px;
+			border-radius: 4px;
+			margin-bottom: 12px;
+			display: none;
+		}
+		.status-ok {
+			background: #0a3d0a;
+			color: #4caf50;
+		}
+		.status-err {
+			background: #3d0a0a;
+			color: #f44336;
+		}
+		.status-loading {
+			background: #3d3d0a;
+			color: #ffeb3b;
+		}
+		#no-bin-warning {
+			background: #3d3d0a;
+			color: #ffeb3b;
+			text-align: center;
+			padding: 12px;
+			border-radius: 8px;
+			margin-bottom: 12px;
+			font-size: 13px;
+			display: none;
+		}
+	</style>
+</head>
+<body>
+	<h1>FGC Scoreboard Controller</h1>
+
+	<div id="no-bin-warning">
+		No bin ID found. Add <strong>?bin=YOUR_ID</strong> to the URL.<br>
+		Create a free bin at <a href="https://www.npoint.io" target="_blank" style="color:#ffeb3b;">npoint.io</a>
+	</div>
+
+	<div id="status"></div>
+
+	<div class="player-section">
+		<h2>Player 1</h2>
+		<div class="field-row">
+			<div class="field">
+				<label>Name</label>
+				<input type="text" id="p1Name" placeholder="Player 1">
+			</div>
+			<div class="field" style="max-width: 100px;">
+				<label>Team</label>
+				<input type="text" id="p1Team" placeholder="Team">
+			</div>
+			<div class="field field-score">
+				<label>Score</label>
+				<input type="number" id="p1Score" min="0" max="99" value="0">
+			</div>
+		</div>
+	</div>
+
+	<div class="player-section">
+		<h2>Player 2</h2>
+		<div class="field-row">
+			<div class="field">
+				<label>Name</label>
+				<input type="text" id="p2Name" placeholder="Player 2">
+			</div>
+			<div class="field" style="max-width: 100px;">
+				<label>Team</label>
+				<input type="text" id="p2Team" placeholder="Team">
+			</div>
+			<div class="field field-score">
+				<label>Score</label>
+				<input type="number" id="p2Score" min="0" max="99" value="0">
+			</div>
+		</div>
+	</div>
+
+	<div class="match-section">
+		<h2>Match Info</h2>
+		<div class="field-row">
+			<div class="field">
+				<label>Round</label>
+				<input type="text" id="round" placeholder="e.g. Grand Finals">
+			</div>
+			<div class="field">
+				<label>Game</label>
+				<input type="text" id="game" list="games" placeholder="e.g. SF6">
+				<datalist id="games">
+					<option value="BBCF">
+					<option value="BBTAG">
+					<option value="DBFZ">
+					<option value="GGXRD">
+					<option value="KOFXIV">
+					<option value="MVCI">
+					<option value="SF6">
+					<option value="SFVCE">
+					<option value="TEKKEN7">
+					<option value="UMVC3">
+					<option value="UNICLR">
+					<option value="USF4">
+				</datalist>
+			</div>
+		</div>
+	</div>
+
+	<div class="button-row">
+		<button class="btn-save" onclick="save()">Save</button>
+		<button class="btn-swap" onclick="swap()">Swap</button>
+	</div>
+	<div class="button-row">
+		<button class="btn-reset" onclick="resetScores()">Reset</button>
+		<button class="btn-clear" onclick="clearAll()">Clear</button>
+	</div>
+
+	<script>
+		var urlParams = new URLSearchParams(window.location.search);
+		var binId = urlParams.get('bin');
+		var apiUrl = binId ? 'https://api.npoint.io/' + binId : null;
+
+		if (!apiUrl) {
+			document.getElementById('no-bin-warning').style.display = 'block';
+		}
+
+		// Load current state from bin on page load
+		if (apiUrl) {
+			showStatus('Loading...', 'loading');
+			fetch(apiUrl)
+				.then(function(r) { return r.json(); })
+				.then(function(data) {
+					if (data.p1Name !== undefined) {
+						document.getElementById('p1Name').value = data.p1Name || '';
+						document.getElementById('p1Team').value = data.p1Team || '';
+						document.getElementById('p1Score').value = data.p1Score || '0';
+						document.getElementById('p2Name').value = data.p2Name || '';
+						document.getElementById('p2Team').value = data.p2Team || '';
+						document.getElementById('p2Score').value = data.p2Score || '0';
+						document.getElementById('round').value = data.round || '';
+						document.getElementById('game').value = data.game || '';
+					}
+					showStatus('Loaded', 'ok');
+				})
+				.catch(function() {
+					showStatus('Could not load data from bin', 'err');
+				});
+		}
+
+		function getFormData() {
+			return {
+				p1Name: document.getElementById('p1Name').value,
+				p1Team: document.getElementById('p1Team').value,
+				p1Score: String(document.getElementById('p1Score').value),
+				p2Name: document.getElementById('p2Name').value,
+				p2Team: document.getElementById('p2Team').value,
+				p2Score: String(document.getElementById('p2Score').value),
+				round: document.getElementById('round').value,
+				game: document.getElementById('game').value,
+				cTitle1: '',
+				cTitle2: '',
+				mText1: '',
+				mText2: '',
+				mText3: '',
+				mText4: '',
+				timestamp: String(Math.floor(Date.now() / 1000))
+			};
+		}
+
+		function save() {
+			if (!apiUrl) {
+				showStatus('No bin configured', 'err');
+				return;
+			}
+			showStatus('Saving...', 'loading');
+			fetch(apiUrl, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(getFormData())
+			})
+			.then(function(r) {
+				if (!r.ok) throw new Error('HTTP ' + r.status);
+				showStatus('Saved', 'ok');
+			})
+			.catch(function(e) {
+				showStatus('Save failed: ' + e.message, 'err');
+			});
+		}
+
+		function swap() {
+			var fields = ['Name', 'Team', 'Score'];
+			fields.forEach(function(f) {
+				var p1 = document.getElementById('p1' + f);
+				var p2 = document.getElementById('p2' + f);
+				var tmp = p1.value;
+				p1.value = p2.value;
+				p2.value = tmp;
+			});
+		}
+
+		function resetScores() {
+			document.getElementById('p1Score').value = '0';
+			document.getElementById('p2Score').value = '0';
+		}
+
+		function clearAll() {
+			document.getElementById('p1Name').value = '';
+			document.getElementById('p1Team').value = '';
+			document.getElementById('p1Score').value = '0';
+			document.getElementById('p2Name').value = '';
+			document.getElementById('p2Team').value = '';
+			document.getElementById('p2Score').value = '0';
+			document.getElementById('round').value = '';
+			document.getElementById('game').value = '';
+		}
+
+		function showStatus(msg, type) {
+			var el = document.getElementById('status');
+			el.textContent = msg;
+			el.className = 'status-' + type;
+			el.style.display = 'block';
+			if (type === 'ok') {
+				setTimeout(function() { el.style.display = 'none'; }, 2000);
+			}
+		}
+	</script>
+</body>
+</html>

@@ -3,7 +3,11 @@ window.onload = init;
 function init(){
 
 	var xhr = new XMLHttpRequest(); //AJAX data request sent to server(in this case server being local json file)
-	var streamJSON = '../sc/streamcontrol.json'; //specifies path for streamcontrol output json
+	var urlParams = new URLSearchParams(window.location.search);
+	var binId = urlParams.get('bin');
+	var streamJSON = binId
+		? 'https://api.npoint.io/' + binId
+		: '../sc/streamcontrol.json'; //fallback to local for backwards compat
 	var scObj; //variable to hold data extracted from parsed json
 	var startup = true; //flag for if looping functions are on their first pass or not
 	var animated = false; //flag for if scoreboard animation has run or not
@@ -22,13 +26,17 @@ function init(){
 	}
 
 	pollJSON();
-	setInterval(function(){pollJSON();},500); //runs polling function twice per second
+	setInterval(function(){pollJSON();},1000); //runs polling function once per second
 
 	xhr.onreadystatechange = parseJSON; //runs parseJSON function every time XMLHttpRequest ready state changes
 
 	function parseJSON() {
 		if(xhr.readyState === 4){ //loads data from json into scObj variable each time that XMLHttpRequest ready state reports back as '4'(successful)
-			scObj = JSON.parse(xhr.responseText);
+			try {
+				scObj = JSON.parse(xhr.responseText);
+			} catch(e) {
+				return; //silently skip this cycle on parse error (e.g. network failure returning non-JSON)
+			}
 			if(animated == true){
 				scoreboard(); //runs scoreboard function each time readyState reports back as 4 as long as it has already run once and changed animated value to false
 			}
