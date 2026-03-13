@@ -1,155 +1,291 @@
 <!DOCTYPE html>
-<html lang="en">
+<!-- Pico CSS v2.1.1 (classless variant), vendored from jsDelivr -->
+<html lang="en" data-theme="dark">
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>FGC Scoreboard Controller</title>
+	<link rel="stylesheet" href="css/pico.classless.min.css">
 	<style>
-		* { box-sizing: border-box; margin: 0; padding: 0; }
+		/* === Neo-Brutalist Overrides === */
+		:root {
+			--pico-border-radius: 0;
+			--pico-border-width: 3px;
+			--pico-box-shadow: 4px 4px 0 #000;
+		}
+
 		body {
-			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 			background: #1a1a2e;
-			color: #e0e0e0;
+			color: #f0f0f0;
 			padding: 16px;
-			max-width: 480px;
+			max-width: 900px;
 			margin: 0 auto;
 		}
+
 		h1 {
-			font-size: 18px;
+			font-size: 24px;
+			font-weight: 900;
 			text-align: center;
+			text-transform: uppercase;
+			letter-spacing: 0.1em;
 			margin-bottom: 16px;
 			color: #fff;
 		}
-		.player-section {
-			background: #16213e;
-			border: 1px solid #0f3460;
-			border-radius: 8px;
-			padding: 12px;
+
+		h2 {
+			font-size: 13px;
+			font-weight: 700;
+			text-transform: uppercase;
+			letter-spacing: 0.12em;
 			margin-bottom: 12px;
 		}
-		.player-section h2 {
-			font-size: 14px;
-			color: #c40a18;
-			margin-bottom: 8px;
+
+		/* --- Players Grid --- */
+		.players-grid {
+			display: grid;
+			grid-template-columns: 1fr;
+			gap: 16px;
+			margin-bottom: 16px;
 		}
+
+		@media (min-width: 768px) {
+			.players-grid {
+				grid-template-columns: 1fr 1fr;
+			}
+		}
+
+		/* --- Player Sections --- */
+		.player-section {
+			background: #222244;
+			border: 3px solid #000;
+			box-shadow: 4px 4px 0 #000;
+			padding: 16px;
+			margin-bottom: 0;
+		}
+
+		.player-section.p1 {
+			border-left: 6px solid #ff4444;
+			background: rgba(255, 68, 68, 0.06);
+		}
+		.player-section.p1 h2 { color: #ff4444; }
+
+		.player-section.p2 {
+			border-left: 6px solid #4488ff;
+			background: rgba(68, 136, 255, 0.06);
+		}
+		.player-section.p2 h2 { color: #4488ff; }
+
+		/* --- Match Section --- */
+		.match-section {
+			background: #222244;
+			border: 3px solid #000;
+			box-shadow: 4px 4px 0 #000;
+			padding: 16px;
+			margin-bottom: 16px;
+		}
+		.match-section h2 { color: #888; }
+
+		/* --- Form Fields --- */
 		.field-row {
 			display: flex;
 			gap: 8px;
-			margin-bottom: 8px;
+			margin-bottom: 10px;
 		}
 		.field-row:last-child { margin-bottom: 0; }
+
 		.field {
 			flex: 1;
 			display: flex;
 			flex-direction: column;
 		}
+
 		.field label {
 			font-size: 11px;
+			font-weight: 700;
 			color: #888;
-			margin-bottom: 2px;
+			margin-bottom: 4px;
 			text-transform: uppercase;
+			letter-spacing: 0.1em;
 		}
-		.field input, .field select {
-			background: #0f3460;
-			border: 1px solid #1a4a7a;
-			border-radius: 4px;
+
+		.field input,
+		.field select {
+			background: #1a1a2e;
+			border: 3px solid #000;
+			box-shadow: 3px 3px 0 #000;
 			color: #fff;
-			padding: 8px;
+			padding: 10px;
 			font-size: 16px;
 			width: 100%;
 		}
-		.field input:focus, .field select:focus {
-			outline: none;
-			border-color: #c40a18;
+
+		.field input:focus,
+		.field select:focus {
+			outline: 3px solid #fff;
+			outline-offset: -3px;
+			border-color: #000;
 		}
-		.field-score { max-width: 70px; }
-		.field-score input {
+
+		.p1 .field input:focus { outline-color: #ff4444; }
+		.p2 .field input:focus { outline-color: #4488ff; }
+
+		/* --- Score Stepper --- */
+		.score-stepper {
+			display: flex;
+			align-items: center;
+			gap: 0;
+			margin-top: 8px;
+		}
+
+		.score-stepper .score-btn {
+			width: 56px;
+			height: 56px;
+			min-height: 48px;
+			font-size: 24px;
+			font-weight: 900;
+			border: 3px solid #000;
+			box-shadow: 3px 3px 0 #000;
+			background: #333;
+			color: #fff;
+			cursor: pointer;
+			transition: transform 0.08s;
+			touch-action: manipulation;
+			user-select: none;
+			-webkit-tap-highlight-color: transparent;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 0;
+			text-transform: none;
+			letter-spacing: 0;
+		}
+
+		.p1 .score-btn { background: #ff4444; color: #000; }
+		.p2 .score-btn { background: #4488ff; color: #000; }
+
+		.score-stepper .score-btn:active {
+			transform: translate(3px, 3px);
+			box-shadow: 0 0 0 #000;
+		}
+
+		.score-display {
+			width: 72px;
+			height: 56px;
+			font-size: 36px;
+			font-weight: 900;
+			font-variant-numeric: tabular-nums;
 			text-align: center;
-			font-size: 20px;
-			font-weight: bold;
+			background: #111;
+			border-top: 3px solid #000;
+			border-bottom: 3px solid #000;
+			border-left: none;
+			border-right: none;
+			color: #fff;
+			box-shadow: none;
+			padding: 0;
+			user-select: none;
+			cursor: default;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			line-height: 1;
 		}
-		.match-section {
-			background: #16213e;
-			border: 1px solid #0f3460;
-			border-radius: 8px;
-			padding: 12px;
-			margin-bottom: 12px;
-		}
-		.match-section h2 {
-			font-size: 14px;
-			color: #c40a18;
-			margin-bottom: 8px;
-		}
+
+		/* --- Team Field --- */
+		.field-team { max-width: 100px; }
+
+		/* --- Buttons --- */
 		.button-row {
 			display: flex;
 			gap: 8px;
-			margin-bottom: 12px;
+			margin-bottom: 8px;
 		}
-		button {
+
+		.button-row button {
 			flex: 1;
-			padding: 12px 8px;
-			border: none;
-			border-radius: 6px;
+			border: 3px solid #000;
+			box-shadow: 4px 4px 0 #000;
 			font-size: 14px;
-			font-weight: bold;
-			cursor: pointer;
+			font-weight: 700;
 			text-transform: uppercase;
+			letter-spacing: 0.1em;
+			padding: 14px 8px;
+			cursor: pointer;
+			transition: transform 0.08s;
+			min-height: 48px;
 			touch-action: manipulation;
+			user-select: none;
+			-webkit-tap-highlight-color: transparent;
 		}
+
+		.button-row button:active {
+			transform: translate(4px, 4px);
+			box-shadow: 0 0 0 #000;
+		}
+
 		.btn-save {
-			background: #c40a18;
-			color: #fff;
+			background: #d4ff00;
+			color: #000;
 		}
-		.btn-save:active { background: #a00814; }
 		.btn-swap {
-			background: #0f3460;
+			background: #444;
 			color: #fff;
 		}
-		.btn-swap:active { background: #1a4a7a; }
 		.btn-reset {
-			background: #333;
-			color: #fff;
+			background: #2a2a2a;
+			color: #aaa;
 		}
-		.btn-reset:active { background: #555; }
 		.btn-clear {
-			background: #333;
-			color: #fff;
+			background: #1a1a1a;
+			color: #666;
+			font-size: 12px;
 		}
-		.btn-clear:active { background: #555; }
+
+		/* --- Status Indicator --- */
 		#status {
 			text-align: center;
 			font-size: 13px;
-			padding: 8px;
-			border-radius: 4px;
-			margin-bottom: 12px;
+			font-weight: 700;
+			text-transform: uppercase;
+			letter-spacing: 0.05em;
+			padding: 10px;
+			margin-bottom: 16px;
 			display: none;
+			border: 3px solid #000;
 		}
+
 		.status-ok {
 			background: #0a3d0a;
 			color: #4caf50;
+			border-color: #4caf50 !important;
 		}
 		.status-err {
 			background: #3d0a0a;
 			color: #f44336;
+			border-color: #f44336 !important;
 		}
 		.status-loading {
 			background: #3d3d0a;
 			color: #ffeb3b;
+			border-color: #ffeb3b !important;
 		}
+
+		/* --- Mode Warning --- */
 		#no-bin-warning {
-			background: #3d3d0a;
+			background: #222244;
 			color: #ffeb3b;
 			text-align: center;
 			padding: 12px;
-			border-radius: 8px;
-			margin-bottom: 12px;
+			margin-bottom: 16px;
 			font-size: 13px;
+			font-weight: 700;
+			border: 3px solid #ffeb3b;
 			display: none;
 		}
 	</style>
 </head>
 <body>
-	<h1>FGC Scoreboard Controller</h1>
+	<h1>FGC Scoreboard</h1>
 
 	<div id="no-bin-warning">
 		No bin ID found. Add <strong>?bin=YOUR_ID</strong> to the URL.<br>
@@ -158,52 +294,56 @@
 
 	<div id="status"></div>
 
-	<div class="player-section">
-		<h2>Player 1</h2>
-		<div class="field-row">
-			<div class="field">
-				<label>Name</label>
-				<input type="text" id="p1Name" placeholder="Player 1">
+	<div class="players-grid">
+		<section class="player-section p1">
+			<h2>Player 1</h2>
+			<div class="field-row">
+				<div class="field">
+					<label>Name</label>
+					<input type="text" id="p1Name" placeholder="Player 1" maxlength="64">
+				</div>
+				<div class="field field-team">
+					<label>Team</label>
+					<input type="text" id="p1Team" placeholder="Team" maxlength="32">
+				</div>
 			</div>
-			<div class="field" style="max-width: 100px;">
-				<label>Team</label>
-				<input type="text" id="p1Team" placeholder="Team">
+			<div class="score-stepper">
+				<button type="button" class="score-btn" onclick="adjustScore('p1Score', -1)" tabindex="-1" aria-label="Decrease P1 score">&minus;</button>
+				<input type="text" readonly id="p1Score" value="0" class="score-display">
+				<button type="button" class="score-btn" onclick="adjustScore('p1Score', 1)" tabindex="-1" aria-label="Increase P1 score">+</button>
 			</div>
-			<div class="field field-score">
-				<label>Score</label>
-				<input type="number" id="p1Score" min="0" max="99" value="0">
+		</section>
+
+		<section class="player-section p2">
+			<h2>Player 2</h2>
+			<div class="field-row">
+				<div class="field">
+					<label>Name</label>
+					<input type="text" id="p2Name" placeholder="Player 2" maxlength="64">
+				</div>
+				<div class="field field-team">
+					<label>Team</label>
+					<input type="text" id="p2Team" placeholder="Team" maxlength="32">
+				</div>
 			</div>
-		</div>
+			<div class="score-stepper">
+				<button type="button" class="score-btn" onclick="adjustScore('p2Score', -1)" tabindex="-1" aria-label="Decrease P2 score">&minus;</button>
+				<input type="text" readonly id="p2Score" value="0" class="score-display">
+				<button type="button" class="score-btn" onclick="adjustScore('p2Score', 1)" tabindex="-1" aria-label="Increase P2 score">+</button>
+			</div>
+		</section>
 	</div>
 
-	<div class="player-section">
-		<h2>Player 2</h2>
-		<div class="field-row">
-			<div class="field">
-				<label>Name</label>
-				<input type="text" id="p2Name" placeholder="Player 2">
-			</div>
-			<div class="field" style="max-width: 100px;">
-				<label>Team</label>
-				<input type="text" id="p2Team" placeholder="Team">
-			</div>
-			<div class="field field-score">
-				<label>Score</label>
-				<input type="number" id="p2Score" min="0" max="99" value="0">
-			</div>
-		</div>
-	</div>
-
-	<div class="match-section">
+	<section class="match-section">
 		<h2>Match Info</h2>
 		<div class="field-row">
 			<div class="field">
 				<label>Round</label>
-				<input type="text" id="round" placeholder="e.g. Grand Finals">
+				<input type="text" id="round" placeholder="e.g. Grand Finals" maxlength="64">
 			</div>
 			<div class="field">
 				<label>Game</label>
-				<input type="text" id="game" list="games" placeholder="e.g. SF6">
+				<input type="text" id="game" list="games" placeholder="e.g. SF6" maxlength="32">
 				<datalist id="games">
 					<option value="BBCF">
 					<option value="BBTAG">
@@ -220,7 +360,7 @@
 				</datalist>
 			</div>
 		</div>
-	</div>
+	</section>
 
 	<div class="button-row">
 		<button class="btn-save" onclick="save()">Save</button>
@@ -295,14 +435,23 @@
 			}
 		}
 
+		function adjustScore(id, delta) {
+			var input = document.getElementById(id);
+			var val = parseInt(input.value, 10) || 0;
+			val = Math.max(0, Math.min(99, val + delta));
+			input.value = String(val);
+		}
+
 		function getFormData() {
+			var p1Raw = parseInt(document.getElementById('p1Score').value, 10) || 0;
+			var p2Raw = parseInt(document.getElementById('p2Score').value, 10) || 0;
 			return {
 				p1Name: document.getElementById('p1Name').value,
 				p1Team: document.getElementById('p1Team').value,
-				p1Score: String(document.getElementById('p1Score').value),
+				p1Score: String(Math.max(0, Math.min(99, p1Raw))),
 				p2Name: document.getElementById('p2Name').value,
 				p2Team: document.getElementById('p2Team').value,
-				p2Score: String(document.getElementById('p2Score').value),
+				p2Score: String(Math.max(0, Math.min(99, p2Raw))),
 				round: document.getElementById('round').value,
 				game: document.getElementById('game').value,
 				cTitle1: '',
@@ -315,7 +464,9 @@
 			};
 		}
 
+		var isSaving = false;
 		function save() {
+			if (isSaving) return;
 			var formData = getFormData();
 			if (localMode) {
 				try {
@@ -326,6 +477,7 @@
 				}
 				return;
 			}
+			isSaving = true;
 			var saveUrl = lanMode ? window.location.origin + '/scoreboard.json' : apiUrl;
 			showStatus('Saving...', 'loading');
 			fetch(saveUrl, {
@@ -339,6 +491,9 @@
 			})
 			.catch(function(e) {
 				showStatus('Save failed \u2014 check server connection', 'err');
+			})
+			.finally(function() {
+				isSaving = false;
 			});
 		}
 
@@ -369,13 +524,21 @@
 			document.getElementById('game').value = '';
 		}
 
+		var statusTimeoutId = null;
 		function showStatus(msg, type) {
 			var el = document.getElementById('status');
+			if (statusTimeoutId !== null) {
+				clearTimeout(statusTimeoutId);
+				statusTimeoutId = null;
+			}
 			el.textContent = msg;
 			el.className = 'status-' + type;
 			el.style.display = 'block';
 			if (type === 'ok') {
-				setTimeout(function() { el.style.display = 'none'; }, 2000);
+				statusTimeoutId = setTimeout(function() {
+					el.style.display = 'none';
+					statusTimeoutId = null;
+				}, 2000);
 			}
 		}
 	</script>

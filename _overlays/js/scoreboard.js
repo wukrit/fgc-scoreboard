@@ -114,7 +114,7 @@ function init(){
 
 		if(startup == true){
 			game = scObj['game'];
-			$('#gameHold').html(game); //sets 'game' value into placeholder div
+			$('#gameHold').text(game); //sets 'game' value into placeholder div
 
 			if(game == 'BBTAG' || game == 'SFVCE' || game == 'TEKKEN7' || game == 'UNICLR'){
 				// Shifts the scoreboard BG wrappers down to match HP bars
@@ -172,13 +172,13 @@ function init(){
 			TweenMax.set('#p2Wrapper',{css:{x: p2Move}});
 			TweenMax.set('#round',{css:{y: rdMove}});
 
-			$('#p1Name').html(p1Name); //changes html object values to values stored in local variables
-			$('#p2Name').html(p2Name);
-			$('#p1Team').html(p1Team);
-			$('#p2Team').html(p2Team);
-			$('#p1Score').html(p1Score);
-			$('#p2Score').html(p2Score);
-			$('#round').html(round);
+			$('#p1Name').text(p1Name); //changes html object values to values stored in local variables
+			$('#p2Name').text(p2Name);
+			$('#p1Team').text(p1Team);
+			$('#p2Team').text(p2Team);
+			$('#p1Score').text(p1Score);
+			$('#p2Score').text(p2Score);
+			$('#round').text(round);
 
 			p1Wrap.each(function(i, p1Wrap){ //function to resize font if text string is too long and causes div to overflow its width/height boundaries
 				while(p1Wrap.scrollWidth > p1Wrap.offsetWidth || p1Wrap.scrollHeight > p1Wrap.offsetHeight){
@@ -212,8 +212,8 @@ function init(){
 			if($('#p1Name').text() != p1Name || $('#p1Team').text() != p1Team){ //if either name or team do not match, fades out wrapper and updates them both
 				TweenMax.to('#p1Wrapper',.3,{css:{x: p1Move, opacity: 0},ease:Quad.easeOut,delay:0,onComplete:function(){ //uses onComplete parameter to execute function after TweenMax
 					$('#p1Wrapper').css('font-size',nameSize); //restores default font size based on variable set in scoreboard.html
-					$('#p1Name').html(p1Name); //updates name and team html objects with current json values
-					$('#p1Team').html(p1Team);
+					$('#p1Name').text(p1Name); //updates name and team html objects with current json values
+					$('#p1Team').text(p1Team);
 
 					p1Wrap.each(function(i, p1Wrap){//same resize functions from above
 						while(p1Wrap.scrollWidth > p1Wrap.offsetWidth || p1Wrap.scrollHeight > p1Wrap.offsetHeight){
@@ -229,8 +229,8 @@ function init(){
 			if($('#p2Name').text() != p2Name || $('#p2Team').text() != p2Team){
 				TweenMax.to('#p2Wrapper',.3,{css:{x: p2Move, opacity: 0},ease:Quad.easeOut,delay:0,onComplete:function(){
 					$('#p2Wrapper').css('font-size',nameSize);
-					$('#p2Name').html(p2Name);
-					$('#p2Team').html(p2Team);
+					$('#p2Name').text(p2Name);
+					$('#p2Team').text(p2Team);
 
 					p2Wrap.each(function(i, p2Wrap){
 						while(p2Wrap.scrollWidth > p2Wrap.offsetWidth || p2Wrap.scrollHeight > p2Wrap.offsetHeight){
@@ -246,7 +246,7 @@ function init(){
 			if($('#round').text() != round){
 				TweenMax.to('#round',.3,{css:{opacity: 0},ease:Quad.easeOut,delay:0,onComplete:function(){ //same format as changing names just no change in positioning, only fade in/out
 					$('#round').css('font-size',rdSize);
-					$('#round').html(round);
+					$('#round').text(round);
 
 					rdResize.each(function(i, rdResize){
 						while(rdResize.scrollWidth > rdResize.offsetWidth || rdResize.scrollHeight > rdResize.offsetHeight){
@@ -261,7 +261,7 @@ function init(){
 
 			if($('#p1Score').text() != p1Score){ //same as round, no postioning changes just fade out, update text, fade back in
 				TweenMax.to('#p1Score',.3,{css:{opacity: 0},ease:Quad.easeOut,delay:0,onComplete:function(){
-					$('#p1Score').html(p1Score);
+					$('#p1Score').text(p1Score);
 
 					TweenMax.to('#p1Score',.3,{css:{opacity: 1},ease:Quad.easeOut,delay:.2});
 				}});
@@ -269,7 +269,7 @@ function init(){
 
 			if($('#p2Score').text() != p2Score){
 				TweenMax.to('#p2Score',.3,{css:{opacity: 0},ease:Quad.easeOut,delay:0,onComplete:function(){
-					$('#p2Score').html(p2Score);
+					$('#p2Score').text(p2Score);
 
 					TweenMax.to('#p2Score',.3,{css:{opacity: 1},ease:Quad.easeOut,delay:.2});
 				}});
@@ -279,7 +279,7 @@ function init(){
 				TweenMax.to('#scoreboardBG',.3,{css:{opacity: 0},delay:0});
 				TweenMax.to('#scoreboard',.3,{css:{opacity: 0},delay:0}); //hide scoreboard background, scoreboard text, and logos
 				TweenMax.to('.logos',.3,{css:{opacity: 0},delay:0,onComplete:function(){ //then execute function
-					$('#gameHold').html(game); //updates gameHold html object with new game dropdown value
+					$('#gameHold').text(game); //updates gameHold html object with new game dropdown value
 
 					if(game == 'BBTAG' || game == 'SFVCE' || game == 'TEKKEN7' || game == 'UNICLR'){
 						offset = document.getElementById("leftBGWrapper").offsetTop;
