@@ -9,72 +9,139 @@ function init(){
 	var startup = true; //flag for if looping functions are on their first pass or not
 	var animated = false; //flag for if scoreboard animation has run or not
 	var game; //variable to hold game value from streamcontrol dropdown
-	var p1Wrap = $('#p1Wrapper'); //variables to shortcut copypasting text resize functions
-	var p2Wrap = $('#p2Wrapper');
-	var rdResize = $('#round');
+	var currentGame = ''; //tracks current game for change detection (replaces hidden #gameHold div)
 
-	if (binId) {
-		// REMOTE MODE — poll npoint.io via AJAX
-		console.log('REMOTE MODE');
-		var xhr = new XMLHttpRequest();
-		var streamJSON = 'https://api.npoint.io/' + binId;
-		var cBust = 0;
+	// Cached jQuery selectors — avoid repeated DOM queries on every poll
+	var $p1Name = $('#p1Name'), $p2Name = $('#p2Name');
+	var $p1Team = $('#p1Team'), $p2Team = $('#p2Team');
+	var $p1Score = $('#p1Score'), $p2Score = $('#p2Score');
+	var $round = $('#round');
+	var $p1Wrapper = $('#p1Wrapper'), $p2Wrapper = $('#p2Wrapper');
 
-		xhr.overrideMimeType('application/json');
+	// Game adjustment groups — data-driven lookup replaces duplicated if/else chains.
+	// To add a new game, just add it to the appropriate group array.
+	var GAME_GROUPS = {
+		adjust1: ['BBTAG', 'SFVCE', 'TEKKEN7', 'UNICLR'],
+		adjust2: ['BBCF', 'DBFZ', 'GGXRD', 'KOFXIV', 'MVCI', 'UMVC3'],
+		adjust3: ['USF4'],
+		logoAdjust: ['BBTAG', 'UNICLR']
+	};
 
-		function pollJSON() {
-			xhr.open('GET',streamJSON+'?v='+cBust,true);
-			xhr.send();
-			cBust++;
+	// --- Helper: shrink font until element content fits within its bounds ---
+	// Uses a ratio-based approach to minimize forced reflows (2 instead of N).
+	function shrinkToFit(el, defaultSize) {
+		el.style.fontSize = defaultSize;
+		var ratio = Math.min(
+			el.offsetWidth / Math.max(el.scrollWidth, 1),
+			el.offsetHeight / Math.max(el.scrollHeight, 1)
+		);
+		if (ratio < 1) {
+			el.style.fontSize = (parseFloat(defaultSize) * ratio * 0.95) + 'px';
 		}
+	}
 
-		pollJSON();
-		setInterval(function(){pollJSON();},1000);
+	// --- Helper: determine which adjustment group a game belongs to ---
+	function getGameGroup(gameName) {
+		if (GAME_GROUPS.adjust1.indexOf(gameName) !== -1) return 'adjust1';
+		if (GAME_GROUPS.adjust2.indexOf(gameName) !== -1) return 'adjust2';
+		if (GAME_GROUPS.adjust3.indexOf(gameName) !== -1) return 'adjust3';
+		return 'adjust2'; // default
+	}
 
-		xhr.onreadystatechange = parseJSON;
+	// --- Helper: apply game-specific layout positioning ---
+	function applyGameLayout(gameName, isGameChange) {
+		var group = getGameGroup(gameName);
 
-		function parseJSON() {
-			if(xhr.readyState === 4){
-				try {
-					scObj = JSON.parse(xhr.responseText);
-				} catch(e) {
-					return;
-				}
-				scoreboard();
+		if (group === 'adjust1') {
+			var offset = document.getElementById("leftBGWrapper").offsetTop;
+			TweenMax.fromTo('#leftBGWrapper', 0.5, {css:{y: offset}}, {css:{y: adjust1}});
+			TweenMax.fromTo('#rightBGWrapper', 0.5, {css:{y: offset}}, {css:{y: adjust1}});
+			TweenMax.set('#leftWrapper',{css:{y: '4px'}});
+			TweenMax.set('#rightWrapper',{css:{y: '4px'}});
+		} else if (group === 'adjust3') {
+			if (isGameChange) {
+				TweenMax.set('#leftWrapper',{css:{y: adjust3}});
+				TweenMax.set('#rightWrapper',{css:{y: adjust3}});
+			} else {
+				var offset = document.getElementById("leftBGWrapper").offsetTop;
+				TweenMax.fromTo('#leftBGWrapper', 0.5, {css:{y: offset}}, {css:{y: adjust3}});
+				TweenMax.fromTo('#rightBGWrapper', 0.5, {css:{y: offset}}, {css:{y: adjust3}});
+				TweenMax.set('#leftWrapper',{css:{y: adjust3}});
+				TweenMax.set('#rightWrapper',{css:{y: adjust3}});
 			}
+		} else {
+			// adjust2 (default)
+			if (isGameChange) {
+				TweenMax.set('#leftBGWrapper',{css:{y: '+0px'}});
+				TweenMax.set('#rightBGWrapper',{css:{y: '+0px'}});
+			}
+			TweenMax.set('#leftWrapper',{css:{y: adjust2}});
+			TweenMax.set('#rightWrapper',{css:{y: adjust2}});
 		}
 
+		// Logo adjustments for specific games
+		if (GAME_GROUPS.logoAdjust.indexOf(gameName) !== -1) {
+			var adjustLgW = parseFloat(isGameChange ? adjustLg[3] : $('.logos').css('width')) * adjustLg[2];
+			var adjustLgH = parseFloat(isGameChange ? adjustLg[4] : $('.logos').css('height')) * adjustLg[2];
+			TweenMax.set('.logos',{css:{x: adjustLg[0], y: adjustLg[1], width: adjustLgW, height: adjustLgH}});
+		} else if (isGameChange) {
+			TweenMax.set('.logos',{css:{x: '+0px', y: '+0px', width: adjustLg[3], height: adjustLg[4]}});
+		}
+	}
+
+	// --- Helper: replay CSS animations by removing and re-adding classes ---
+	function playCSSAnimations(){
+		var animations = [
+			['roundBG', 'round-animation'],
+			['p1PlayerBG', 'player1-animation'],
+			['p1ScoreBG', 'p1s-animation'],
+			['p2PlayerBG', 'player2-animation'],
+			['p2ScoreBG', 'p2s-animation']
+		];
+		// Batch removals
+		animations.forEach(function(pair) {
+			document.getElementById(pair[0]).classList.remove(pair[1]);
+		});
+		// Single forced reflow
+		void document.getElementById('roundBG').offsetWidth;
+		// Batch additions
+		animations.forEach(function(pair) {
+			document.getElementById(pair[0]).classList.add(pair[1]);
+		});
+	}
+
+	// --- Unified polling: single factory for remote and LAN modes ---
+	function createPoller(url, callback) {
+		var abortCtrl = null;
+		function poll() {
+			if (abortCtrl) abortCtrl.abort();
+			abortCtrl = new AbortController();
+			fetch(url + '?v=' + Date.now(), { signal: abortCtrl.signal })
+				.then(function(r) { return r.json(); })
+				.then(function(data) { callback(data); })
+				.catch(function(e) { /* ignore AbortError and network errors */ });
+		}
+		poll();
+		setInterval(poll, 1000);
+	}
+
+	// --- Mode setup ---
+	if (binId) {
+		// REMOTE MODE — poll npoint.io
+		console.log('REMOTE MODE');
+		createPoller('https://api.npoint.io/' + binId, function(data) {
+			scObj = data;
+			scoreboard();
+		});
 		setTimeout(scoreboard, 300);
 
 	} else if (lanMode) {
-		// LAN MODE — poll local server via AJAX
+		// LAN MODE — poll local server
 		console.log('LAN MODE');
-		var lanXhr = new XMLHttpRequest();
-		var lanURL = window.location.origin + '/scoreboard.json';
-		var lanBust = 0;
-
-		lanXhr.overrideMimeType('application/json');
-
-		function pollLAN() {
-			lanXhr.open('GET', lanURL + '?v=' + lanBust, true);
-			lanXhr.send();
-			lanBust++;
-		}
-
-		pollLAN();
-		setInterval(function(){ pollLAN(); }, 1000);
-
-		lanXhr.onreadystatechange = function() {
-			if (lanXhr.readyState === 4) {
-				try {
-					scObj = JSON.parse(lanXhr.responseText);
-				} catch(e) {
-					return;
-				}
-				scoreboard();
-			}
-		};
-
+		createPoller(window.location.origin + '/scoreboard.json', function(data) {
+			scObj = data;
+			scoreboard();
+		});
 		setTimeout(scoreboard, 300);
 
 	} else {
@@ -87,7 +154,6 @@ function init(){
 			catch(e) { console.warn('Failed to parse localStorage data:', e); }
 		}
 
-		// Listen for cross-tab updates via storage event
 		window.addEventListener('storage', function(evt) {
 			if (evt.key === 'fgc-scoreboard-data' && evt.newValue) {
 				try {
@@ -100,7 +166,6 @@ function init(){
 			}
 		});
 
-		// Kick off first render if we have data
 		if (scObj) {
 			setTimeout(scoreboard, 300);
 		}
@@ -109,53 +174,24 @@ function init(){
 	function scoreboard(){
 		if(!scObj) return;
 
-		if(startup == true){
+		if(startup){
 			game = scObj['game'];
-			$('#gameHold').text(game); //sets 'game' value into placeholder div
+			currentGame = game;
 
-			if(game == 'BBTAG' || game == 'SFVCE' || game == 'TEKKEN7' || game == 'UNICLR'){
-				// Shifts the scoreboard BG wrappers down to match HP bars
-				offset = document.getElementById("leftBGWrapper").offsetTop;
-				TweenMax.fromTo('#leftBGWrapper', 0.5, {css:{y: offset}}, {css:{y: adjust1}})
-				TweenMax.fromTo('#rightBGWrapper', 0.5, {css:{y: offset}}, {css:{y: adjust1}})
-				TweenMax.set('#leftWrapper',{css:{y: '4px'}});
-				TweenMax.set('#rightWrapper',{css:{y: '4px'}});
-			}
-			else if(game == 'BBCF' || game == 'DBFZ' || game == 'GGXRD' || game == 'KOFXIV' || game == 'MVCI' || game == 'UMVC3'){
-				// Shifts the scoreboard text wrappers up to match HP bars
-				TweenMax.set('#leftWrapper',{css:{y: adjust2}});
-				TweenMax.set('#rightWrapper',{css:{y: adjust2}});
-			}
-			else if(game == 'USF4'){
-				offset = document.getElementById("leftBGWrapper").offsetTop;
-				TweenMax.fromTo('#leftBGWrapper', 0.5, {css:{y: offset}}, {css:{y: adjust3}})
-				TweenMax.fromTo('#rightBGWrapper', 0.5, {css:{y: offset}}, {css:{y: adjust3}})
-				TweenMax.set('#leftWrapper',{css:{y: adjust3}});
-				TweenMax.set('#rightWrapper',{css:{y: adjust3}});
-			}
-			else{
-				TweenMax.set('#leftWrapper',{css:{y: adjust2}}); //if 'game' value is anything other than specified above it defaults to 2nd webm/placement
-				TweenMax.set('#rightWrapper',{css:{y: adjust2}});
-			}
-			if(game == 'BBTAG' || game == 'UNICLR'){
-				var adjustLgW = parseFloat($('.logos').css('width')) * adjustLg[2]; //shrinks logo sizes based on scaling variable set in scoreboard.html
-				var adjustLgH = parseFloat($('.logos').css('height')) * adjustLg[2];
-				TweenMax.set('.logos',{css:{x: adjustLg[0], y: adjustLg[1], width: adjustLgW, height: adjustLgH}});
-			}
-
-			getData(); //runs function that sets data polled from json into html objects
-			setTimeout(logoLoop,logoTime); //sets logoLoop function out in time specified in logoTime variable in scoreboard.html
-			startup = false; //flags that the scoreboard/getData functions have run their first pass
-			animated = true; //flags that the scoreboard animation has run
+			applyGameLayout(game, false);
+			getData();
+			setTimeout(logoLoop, logoTime);
+			startup = false;
+			animated = true;
 		}
 		else{
-			getData(); //if startup is not set to true, only the getData function is run each time scoreboard function runs
+			getData();
 		}
 	}
 
 	function getData(){
 
-		var p1Name = scObj['p1Name']; //creates local variables to store data parsed from json
+		var p1Name = scObj['p1Name'];
 		var p2Name = scObj['p2Name'];
 		var p1Team = scObj['p1Team'];
 		var p2Team = scObj['p2Team'];
@@ -163,212 +199,114 @@ function init(){
 		var p2Score = scObj['p2Score'];
 		var round = scObj['round'];
 
-		if(startup == true){
+		if(startup){
 
-			TweenMax.set('#p1Wrapper',{css:{x: p1Move}}); //sets name/round wrappers to starting positions for them to animate from
+			TweenMax.set('#p1Wrapper',{css:{x: p1Move}});
 			TweenMax.set('#p2Wrapper',{css:{x: p2Move}});
 			TweenMax.set('#round',{css:{y: rdMove}});
 
-			$('#p1Name').text(p1Name); //changes html object values to values stored in local variables
-			$('#p2Name').text(p2Name);
-			$('#p1Team').text(p1Team);
-			$('#p2Team').text(p2Team);
-			$('#p1Score').text(p1Score);
-			$('#p2Score').text(p2Score);
-			$('#round').text(round);
+			$p1Name.text(p1Name);
+			$p2Name.text(p2Name);
+			$p1Team.text(p1Team);
+			$p2Team.text(p2Team);
+			$p1Score.text(p1Score);
+			$p2Score.text(p2Score);
+			$round.text(round);
 
-			p1Wrap.each(function(i, p1Wrap){ //function to resize font if text string is too long and causes div to overflow its width/height boundaries
-				while(p1Wrap.scrollWidth > p1Wrap.offsetWidth || p1Wrap.scrollHeight > p1Wrap.offsetHeight){
-					var newFontSize = (parseFloat($(p1Wrap).css('font-size').slice(0,-2)) * .95) + 'px';
-					$(p1Wrap).css('font-size', newFontSize);
-				}
-			});
+			shrinkToFit($p1Wrapper[0], nameSize);
+			shrinkToFit($p2Wrapper[0], nameSize);
+			shrinkToFit($round[0], rdSize);
 
-			p2Wrap.each(function(i, p2Wrap){
-				while(p2Wrap.scrollWidth > p2Wrap.offsetWidth || p2Wrap.scrollHeight > p2Wrap.offsetHeight){
-					var newFontSize = (parseFloat($(p2Wrap).css('font-size').slice(0,-2)) * .95) + 'px';
-					$(p2Wrap).css('font-size', newFontSize);
-				}
-			});
-
-			rdResize.each(function(i, rdResize){
-				while(rdResize.scrollWidth > rdResize.offsetWidth || rdResize.scrollHeight > rdResize.offsetHeight){
-					var newFontSize = (parseFloat($(rdResize).css('font-size').slice(0,-2)) * .95) + 'px';
-					$(rdResize).css('font-size', newFontSize);
-				}
-			});
-
-			TweenMax.to('#p1Wrapper',nameTime,{css:{x: '+0px', opacity: 1},ease:Quad.easeOut,delay:nameDelay}); //animates wrappers traveling back to default css positions while
-			TweenMax.to('#p2Wrapper',nameTime,{css:{x: '+0px', opacity: 1},ease:Quad.easeOut,delay:nameDelay}); //fading them in, timing/delay based on variables set in scoreboard.html
+			TweenMax.to('#p1Wrapper',nameTime,{css:{x: '+0px', opacity: 1},ease:Quad.easeOut,delay:nameDelay});
+			TweenMax.to('#p2Wrapper',nameTime,{css:{x: '+0px', opacity: 1},ease:Quad.easeOut,delay:nameDelay});
 			TweenMax.to('#round',rdTime,{css:{y: '+0px', opacity: 1},ease:Quad.easeOut,delay:rdDelay});
 			TweenMax.to('.scores',scTime,{css:{opacity: 1},ease:Quad.easeOut,delay:scDelay});
 		}
 		else{
-			game = scObj['game']; //if this is after the first time that getData function has run, changes the value of the local game variable to current json output
+			game = scObj['game'];
 
-			if($('#p1Name').text() != p1Name || $('#p1Team').text() != p1Team){ //if either name or team do not match, fades out wrapper and updates them both
-				TweenMax.to('#p1Wrapper',.3,{css:{x: p1Move, opacity: 0},ease:Quad.easeOut,delay:0,onComplete:function(){ //uses onComplete parameter to execute function after TweenMax
-					$('#p1Wrapper').css('font-size',nameSize); //restores default font size based on variable set in scoreboard.html
-					$('#p1Name').text(p1Name); //updates name and team html objects with current json values
-					$('#p1Team').text(p1Team);
-
-					p1Wrap.each(function(i, p1Wrap){//same resize functions from above
-						while(p1Wrap.scrollWidth > p1Wrap.offsetWidth || p1Wrap.scrollHeight > p1Wrap.offsetHeight){
-							var newFontSize = (parseFloat($(p1Wrap).css('font-size').slice(0,-2)) * .95) + 'px';
-							$(p1Wrap).css('font-size', newFontSize);
-						}
-					});
-
-					TweenMax.to('#p1Wrapper',.3,{css:{x: '+0px', opacity: 1},ease:Quad.easeOut,delay:.2}); //fades name wrapper back in while moving to original position
+			if($p1Name.text() !== p1Name || $p1Team.text() !== p1Team){
+				TweenMax.killTweensOf('#p1Wrapper');
+				TweenMax.to('#p1Wrapper',.3,{css:{x: p1Move, opacity: 0},ease:Quad.easeOut,delay:0,onComplete:function(){
+					$p1Name.text(p1Name);
+					$p1Team.text(p1Team);
+					shrinkToFit($p1Wrapper[0], nameSize);
+					TweenMax.to('#p1Wrapper',.3,{css:{x: '+0px', opacity: 1},ease:Quad.easeOut,delay:.2});
 				}});
 			}
 
-			if($('#p2Name').text() != p2Name || $('#p2Team').text() != p2Team){
+			if($p2Name.text() !== p2Name || $p2Team.text() !== p2Team){
+				TweenMax.killTweensOf('#p2Wrapper');
 				TweenMax.to('#p2Wrapper',.3,{css:{x: p2Move, opacity: 0},ease:Quad.easeOut,delay:0,onComplete:function(){
-					$('#p2Wrapper').css('font-size',nameSize);
-					$('#p2Name').text(p2Name);
-					$('#p2Team').text(p2Team);
-
-					p2Wrap.each(function(i, p2Wrap){
-						while(p2Wrap.scrollWidth > p2Wrap.offsetWidth || p2Wrap.scrollHeight > p2Wrap.offsetHeight){
-							var newFontSize = (parseFloat($(p2Wrap).css('font-size').slice(0,-2)) * .95) + 'px';
-							$(p2Wrap).css('font-size', newFontSize);
-						}
-					});
-
+					$p2Name.text(p2Name);
+					$p2Team.text(p2Team);
+					shrinkToFit($p2Wrapper[0], nameSize);
 					TweenMax.to('#p2Wrapper',.3,{css:{x: '+0px', opacity: 1},ease:Quad.easeOut,delay:.2});
 				}});
 			}
 
-			if($('#round').text() != round){
-				TweenMax.to('#round',.3,{css:{opacity: 0},ease:Quad.easeOut,delay:0,onComplete:function(){ //same format as changing names just no change in positioning, only fade in/out
-					$('#round').css('font-size',rdSize);
-					$('#round').text(round);
-
-					rdResize.each(function(i, rdResize){
-						while(rdResize.scrollWidth > rdResize.offsetWidth || rdResize.scrollHeight > rdResize.offsetHeight){
-							var newFontSize = (parseFloat($(rdResize).css('font-size').slice(0,-2)) * .95) + 'px';
-							$(rdResize).css('font-size', newFontSize);
-						}
-					});
-
+			if($round.text() !== round){
+				TweenMax.killTweensOf('#round');
+				TweenMax.to('#round',.3,{css:{opacity: 0},ease:Quad.easeOut,delay:0,onComplete:function(){
+					$round.text(round);
+					shrinkToFit($round[0], rdSize);
 					TweenMax.to('#round',.3,{css:{opacity: 1},ease:Quad.easeOut,delay:.2});
 				}});
 			}
 
-			if($('#p1Score').text() != p1Score){ //same as round, no postioning changes just fade out, update text, fade back in
+			if($p1Score.text() !== p1Score){
+				TweenMax.killTweensOf('#p1Score');
 				TweenMax.to('#p1Score',.3,{css:{opacity: 0},ease:Quad.easeOut,delay:0,onComplete:function(){
-					$('#p1Score').text(p1Score);
-
+					$p1Score.text(p1Score);
 					TweenMax.to('#p1Score',.3,{css:{opacity: 1},ease:Quad.easeOut,delay:.2});
 				}});
 			}
 
-			if($('#p2Score').text() != p2Score){
+			if($p2Score.text() !== p2Score){
+				TweenMax.killTweensOf('#p2Score');
 				TweenMax.to('#p2Score',.3,{css:{opacity: 0},ease:Quad.easeOut,delay:0,onComplete:function(){
-					$('#p2Score').text(p2Score);
-
+					$p2Score.text(p2Score);
 					TweenMax.to('#p2Score',.3,{css:{opacity: 1},ease:Quad.easeOut,delay:.2});
 				}});
 			}
 
-			if($('#gameHold').text() != game){ //checks to see if current json value for 'game' has changed from what is stored in gameHold html object
+			if(currentGame !== game){
+				currentGame = game;
 				TweenMax.to('#scoreboardBG',.3,{css:{opacity: 0},delay:0});
-				TweenMax.to('#scoreboard',.3,{css:{opacity: 0},delay:0}); //hide scoreboard background, scoreboard text, and logos
-				TweenMax.to('.logos',.3,{css:{opacity: 0},delay:0,onComplete:function(){ //then execute function
-					$('#gameHold').text(game); //updates gameHold html object with new game dropdown value
-
-					if(game == 'BBTAG' || game == 'SFVCE' || game == 'TEKKEN7' || game == 'UNICLR'){
-						offset = document.getElementById("leftBGWrapper").offsetTop;
-						TweenMax.fromTo('#leftBGWrapper', 0.5, {css:{y: offset}}, {css:{y: adjust1}})
-						TweenMax.fromTo('#rightBGWrapper', 0.5, {css:{y: offset}}, {css:{y: adjust1}})
-						TweenMax.set('#leftWrapper',{css:{y: '4px'}});
-						TweenMax.set('#rightWrapper',{css:{y: '4px'}});
-					}
-					else if(game == 'BBCF' || game == 'DBFZ' || game == 'GGXRD' || game == 'KOFXIV' || game == 'MVCI' || game == 'UMVC3'){
-						TweenMax.set('#leftBGWrapper',{css:{y: '+0px'}});
-						TweenMax.set('#rightBGWrapper',{css:{y: '+0px'}});
-						TweenMax.set('#leftWrapper',{css:{y: adjust2}});
-						TweenMax.set('#rightWrapper',{css:{y: adjust2}});
-					}
-					else if(game == 'USF4'){
-						TweenMax.set('#leftWrapper',{css:{y: adjust3}});
-						TweenMax.set('#rightWrapper',{css:{y: adjust3}});
-					}
-					else{
-						TweenMax.set('#leftWrapper',{css:{y: adjust2}});
-						TweenMax.set('#rightWrapper',{css:{y: adjust2}});
-					}
-					if(game == 'BBTAG' || game == 'UNICLR'){
-						var adjustLgW = parseFloat(adjustLg[3]) * adjustLg[2]; //var changed so that it bases resized on original logo size rather than current value
-						var adjustLgH = parseFloat(adjustLg[4]) * adjustLg[2]; //uses variables stored in the 'adjustLg' array in scoreboard.html
-						TweenMax.set('.logos',{css:{x: adjustLg[0], y: adjustLg[1], width: adjustLgW, height: adjustLgH}});
-						TweenMax.set('.logos',{css:{x: adjustLg[0], y: adjustLg[1]}});
-					}
-					else{
-						TweenMax.set('.logos',{css:{x: '+0px', y: '+0px', width: adjustLg[3], height: adjustLg[4]}}); //also return logos to original positioning and size
-					}
-
+				TweenMax.to('#scoreboard',.3,{css:{opacity: 0},delay:0});
+				TweenMax.to('.logos',.3,{css:{opacity: 0},delay:0,onComplete:function(){
+					applyGameLayout(game, true);
 					playCSSAnimations();
-
-					TweenMax.to('#scoreboardBG',.3,{css:{opacity: 1},delay:.3}); //fade background/text objects back in with enough delay for scoreboard to finish playing first
+					TweenMax.to('#scoreboardBG',.3,{css:{opacity: 1},delay:.3});
 					TweenMax.to('#scoreboard',.3,{css:{opacity: 1},delay:.3});
-					TweenMax.to('.logos',.3,{css:{opacity: .7},delay:.3}); //TweenMax to fade logos back in, note to fade them to same opacity as default in CSS
+					TweenMax.to('.logos',.3,{css:{opacity: .7},delay:.3});
 				}});
 			}
 		}
 	}
 
-	function playCSSAnimations(){
-		roundBG = document.getElementById("roundBG");
-		roundBG.classList.remove("round-animation");
-		void roundBG.offsetWidth;
-		roundBG.classList.add("round-animation");
-
-		player1BG = document.getElementById("p1PlayerBG");
-		player1BG.classList.remove("player1-animation");
-		void player1BG.offsetWidth;
-		player1BG.classList.add("player1-animation");
-
-		score1BG = document.getElementById("p1ScoreBG");
-		score1BG.classList.remove("p1s-animation");
-		void score1BG.offsetWidth;
-		score1BG.classList.add("p1s-animation");
-
-		player2BG = document.getElementById("p2PlayerBG");
-		player2BG.classList.remove("player2-animation");
-		void player2BG.offsetWidth;
-		player2BG.classList.add("player2-animation");
-
-		score2BG = document.getElementById("p2ScoreBG");
-		score2BG.classList.remove("p2s-animation");
-		void score2BG.offsetWidth;
-		score2BG.classList.add("p2s-animation");
-	}
-
 	function logoLoop(){
-		var initialTime = 700; //initial fade-in time for first logo
-		var intervalTime = 15000; //amount of time between changing of logos
-		var fadeTime = 2000; //duration of crossfade between logos
-		var currentItem = 0; //placement value within logoWrapper container of current logo being operated on in function
-		var itemCount = $('#logoWrapper').children().length; //number of logo <img> objects located within logoWrapper container
+		var initialTime = 700;
+		var intervalTime = 15000;
+		var fadeTime = 2000;
+		var currentItem = 0;
+		var $logos = $('#logoWrapper').find('img');
+		var itemCount = $logos.length;
 
 		if(itemCount > 1){
-			$('#logoWrapper').find('img').eq(currentItem).fadeIn(initialTime);
+			$logos.eq(currentItem).fadeIn(initialTime);
 
 			setInterval(function(){
+				$logos.eq(currentItem).fadeOut(fadeTime);
 
-				$('#logoWrapper').find('img').eq(currentItem).fadeOut(fadeTime);
-
-				if(currentItem == itemCount - 1){
+				if(currentItem === itemCount - 1){
 					currentItem = 0;
 				}
 				else{
 					currentItem++;
 				}
 
-				$('#logoWrapper').find('img').eq(currentItem).fadeIn(fadeTime);
-
+				$logos.eq(currentItem).fadeIn(fadeTime);
 			},intervalTime);
 		}
 		else{

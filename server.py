@@ -10,12 +10,13 @@ import tempfile
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 SCOREBOARD_FILE = 'scoreboard.json'
+MAX_BODY_SIZE = 65536  # 64KB — generous for scoreboard JSON
+ALLOWED_PREFIXES = ('/_overlays/', '/css/', '/fonts/', '/js/')
+ALLOWED_FILES = ('/controller.html', '/scoreboard.json', '/')
 DEFAULT_DATA = {
     "p1Name": "", "p1Team": "", "p1Score": "0",
     "p2Name": "", "p2Team": "", "p2Score": "0",
     "round": "", "game": "",
-    "cTitle1": "", "cTitle2": "",
-    "mText1": "", "mText2": "", "mText3": "", "mText4": "",
     "timestamp": ""
 }
 
@@ -34,7 +35,8 @@ def get_lan_ip():
 class ScoreboardHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
-        if self.path.split('?')[0] == '/' + SCOREBOARD_FILE:
+        path = self.path.split('?')[0]
+        if path == '/' + SCOREBOARD_FILE:
             try:
                 with open(SCOREBOARD_FILE, 'r') as f:
                     data = f.read()
@@ -42,21 +44,45 @@ class ScoreboardHandler(SimpleHTTPRequestHandler):
                 data = json.dumps(DEFAULT_DATA, indent=2)
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
+            self.send_header('Cache-Control', 'no-store')
             self.end_headers()
             self.wfile.write(data.encode())
-        else:
+        elif path in ALLOWED_FILES or any(path.startswith(p) for p in ALLOWED_PREFIXES):
             super().do_GET()
+        else:
+            self.send_response(404)
+            self.end_headers()
 
     def do_POST(self):
         if self.path.split('?')[0] == '/' + SCOREBOARD_FILE:
-            length = int(self.headers.get('Content-Length', 0))
+            try:
+                length = int(self.headers.get('Content-Length', 0))
+            except (ValueError, TypeError):
+                self.send_response(400)
+                self.end_headers()
+                self.wfile.write(b'Invalid Content-Length')
+                return
+            if length <= 0 or length > MAX_BODY_SIZE:
+                self.send_response(413 if length > MAX_BODY_SIZE else 400)
+                self.end_headers()
+                return
             body = self.rfile.read(length)
             try:
-                json.loads(body)
+                data = json.loads(body)
             except (json.JSONDecodeError, ValueError):
                 self.send_response(400)
                 self.end_headers()
                 self.wfile.write(b'Invalid JSON')
+                return
+            if not isinstance(data, dict) or not data.keys() <= set(DEFAULT_DATA.keys()):
+                self.send_response(400)
+                self.end_headers()
+                self.wfile.write(b'Invalid schema')
+                return
+            if any(not isinstance(v, str) or len(v) > 128 for v in data.values()):
+                self.send_response(400)
+                self.end_headers()
+                self.wfile.write(b'Invalid field values')
                 return
             # Atomic write: temp file then rename
             fd, tmp = tempfile.mkstemp(dir='.', suffix='.tmp')

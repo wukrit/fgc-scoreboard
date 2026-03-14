@@ -45,8 +45,9 @@ TUNNEL_PID=$!
 
 echo ""
 echo "FGC Scoreboard is live!"
-echo "  Controller: https://fgc-scoreboard.sukritwalia.com/controller.html"
-echo "  Overlay:    https://fgc-scoreboard.sukritwalia.com/_overlays/scoreboard.html"
+echo "  Check cloudflared output above for your tunnel URL."
+echo "  Append /controller.html for the controller."
+echo "  Append /_overlays/scoreboard.html for the overlay."
 echo ""
 echo "Press Ctrl+C to stop."
 echo ""

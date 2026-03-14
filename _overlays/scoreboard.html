@@ -1,9 +1,9 @@
 <html>
 	<head>
 		<link rel="stylesheet" href="css/style.css">
-		<script src="js/scoreboard.js" type="text/javascript" charset="utf-8"></script>
 		<script src="js/jquery-3.3.1.min.js" type="text/javascript" charset="utf-8"></script>
 		<script src="js/greensock-js/src/minified/TweenMax.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/scoreboard.js" type="text/javascript" charset="utf-8"></script>
 	</head>
 	<body>
 		<div id="scoreboardBG">
@@ -22,7 +22,7 @@
 			<div id="leftWrapper">
 				<span id="p1Score" class="scores"></span>
 				<span id="p1Wrapper" class="wrappers">
-					<span id="p1Team" class="teams"></span> <!-- team/name spans nested within wrapper span to allow them to align the same without overlapping each other -->
+					<span id="p1Team" class="teams"></span>
 					<span id="p1Name" class="names"></span>
 				</span>
 			</div>
@@ -38,15 +38,8 @@
 			</div>
 		</div>
 
-
 		<div id="logoWrapper">
-			<!-- <img id="logo1" class="logos" src="imgs/reddit-tour.png"></img> -->
-			<!-- <img id="logo2" class="logos" src="imgs/logo2.png"></img> -->
-			<!-- <img id="logo3" class="logos" src="imgs/logo3.png"></img> -->
 		</div>
-
-
-		<div id="gameHold"></div> <!-- div to remain hidden to act as a placeholder for 'game' value -->
 
 		<script type="text/javascript">
 			var nameSize = '30px'; //default font size of name wrappers, should match 'font-size' value of .wrappers
@@ -61,10 +54,10 @@
 			var scTime = .3; //amount of time in seconds that the load-in animation for scores takes
 			var scDelay = .45; //amount of time in seconds that the load-in animation for scores is delayed before starting
 			var logoTime = 200; //amount of time the fade-in animation for logos is delayed before starting
-			var adjust1 = '+32px'; //distance on y-axis that scoreboards move when adjusting for 2nd webm
-			var adjust2 = '-28px'; //distance on y-axis that scoreboards move when adjusting for 2nd webm
-			var adjust3 = '+28px'; //distance on y-axis that scoreboards move when adjusting for 3rd webm
-			var adjustLg = ['+890px','+30px',.8,'240px','140px']; //array of [distance to move logos on x-axis, "" on y-axis, scaling factor to shrink logos by, original logo width, original logo height]
+			var adjust1 = '+32px'; //distance on y-axis that scoreboards move when adjusting for game group 1
+			var adjust2 = '-28px'; //distance on y-axis that scoreboards move when adjusting for game group 2
+			var adjust3 = '+28px'; //distance on y-axis that scoreboards move when adjusting for game group 3
+			var adjustLg = ['+890px','+30px',.8,'240px','140px']; //array of [x offset, y offset, scale factor, original width, original height]
 		</script>
 	</body>
 
