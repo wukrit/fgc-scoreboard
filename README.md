@@ -160,8 +160,7 @@ If you found this useful or have suggestions, feel free to reach out! Find me on
 
 ## Screenshots
 <p align="center">
-  <img src="screenshots/dbfz.png" alt="FGC Scoreboard on DBFZ." width="75%">
-  <img src="screenshots/uniclr.png" alt="FGC Scoreboard on UNICLR." width="75%">
+  <img src="screenshots/sf6.png" alt="FGC Scoreboard on SF6." width="75%">
 </p>
 
 ## License
