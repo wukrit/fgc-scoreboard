@@ -16,11 +16,11 @@ Best for in-person tournaments. Requires Python 3.
    ```
    python3 server.py
    ```
-2. The server prints your LAN URLs:
+2. The server auto-detects your machine's LAN IP and prints ready-to-use URLs:
    ```
    FGC Scoreboard Server
-   Controller: http://192.168.1.5:8080/controller.html
-   Overlay:    http://192.168.1.5:8080/_overlays/scoreboard.html
+   Controller: http://<your-lan-ip>:8080/controller.html
+   Overlay:    http://<your-lan-ip>:8080/_overlays/scoreboard.html
    ```
 3. Open the **Controller** URL on your phone or tablet.
 4. In OBS, add a **Browser Source** pointing to the **Overlay** URL. Set the resolution to **1920x1080**.
