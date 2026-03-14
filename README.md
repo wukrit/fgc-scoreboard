@@ -1,4 +1,7 @@
 # FGC Scoreboard
+
+> Forked from [WASD-Gaming/fgc-scoreboard](https://github.com/WASD-Gaming/fgc-scoreboard) by [@tarikfayad](https://twitter.com/tarikfayad). Big thanks to Tarik for the original project — check out his work at [WASD Gaming](https://wasdgaming.gg).
+
 FGC Scoreboard is an HTML and CSS scoreboard overlay for fighting game tournament streams. It uses no images for the scoreboard itself (only optional tournament logos) and no webm files for animations — everything is CSS keyframes and GreenSock (TweenMax).
 
 ## Quick Start
@@ -20,7 +23,7 @@ Best for in-person tournaments. Requires Python 3.
    Overlay:    http://192.168.1.5:8080/_overlays/scoreboard.html
    ```
 3. Open the **Controller** URL on your phone or tablet.
-4. In OBS, add a **Browser Source** pointing to the **Overlay** URL.
+4. In OBS, add a **Browser Source** pointing to the **Overlay** URL. Set the resolution to **1920x1080**.
 5. Enter scores on the controller, hit **Save**, and the overlay updates live.
 
 To use a different port: `python3 server.py --port 9090`
@@ -28,6 +31,8 @@ To use a different port: `python3 server.py --port 9090`
 ### Tunnel Mode (Cloudflare Tunnel)
 
 Best for sharing your local server over the internet with a stable URL. Requires [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/get-started/).
+
+> **Note:** The LAN server has no authentication. Anyone with your tunnel URL can read and overwrite the scoreboard. Only share the URL with trusted operators.
 
 **One-time setup:**
 
@@ -75,8 +80,10 @@ Press Ctrl+C to stop both.
 
 Best for online tournaments or when the controller and streaming PC aren't on the same network.
 
+> **Note:** npoint.io bins are public. Anyone who knows or guesses your bin ID can read or overwrite the scoreboard. For high-stakes tournaments, prefer LAN or Tunnel mode.
+
 1. Create a free JSON bin at [npoint.io](https://www.npoint.io/) and copy the bin ID.
-2. In OBS, add a **Browser Source** pointing to:
+2. In OBS, add a **Browser Source** (1920x1080) pointing to:
    ```
    https://yourgithubpages.url/_overlays/scoreboard.html?bin=YOUR_BIN_ID
    ```
@@ -91,7 +98,7 @@ Best for online tournaments or when the controller and streaming PC aren't on th
 The controller is a mobile-friendly web form for updating:
 - Player Names
 - Team Names
-- Scores
+- Scores (tap +/- buttons, which auto-save instantly)
 - Round
 - Game
 
@@ -107,6 +114,20 @@ When you select a game and hit save, the overlay adjusts its position so scores 
 | BBCF, DBFZ, GGXRD, KOFXIV, MVCI, SF6, UMVC3 | Default |
 | USF4 | Custom offset |
 
+### Adding a New Game
+
+1. Add the game to the datalist in `controller.html`.
+2. Add the game to the appropriate group in the `GAME_GROUPS` object at the top of `_overlays/js/scoreboard.js`:
+   ```javascript
+   var GAME_GROUPS = {
+       adjust1: ['BBTAG', 'SFVCE', 'TEKKEN7', 'UNICLR'],
+       adjust2: ['BBCF', 'DBFZ', 'GGXRD', 'KOFXIV', 'MVCI', 'UMVC3'],
+       adjust3: ['USF4'],
+       logoAdjust: ['BBTAG', 'UNICLR']
+   };
+   ```
+   Games not listed in any group default to `adjust2`.
+
 ## Customization
 
 **Colors and styling:** Edit the SCSS variables at the top of `_overlays/css/style.scss`, then compile:
@@ -116,7 +137,15 @@ sass _overlays/css/style.scss _overlays/css/style.css
 
 **Animation timing:** Edit the inline `<script>` variables in `_overlays/scoreboard.html` (timing, offsets, distances).
 
-**Logos:** Drop tournament/company logo images into the logos section of `scoreboard.html`. Multiple logos rotate automatically.
+**Logos:** Add `<img>` tags with `class="logos"` inside the `#logoWrapper` div in `_overlays/scoreboard.html`. Multiple logos rotate automatically.
+
+```html
+<div id="logoWrapper">
+    <img id="logo1" class="logos" src="imgs/your-logo.png">
+</div>
+```
+
+**OBS Browser Source:** Set the resolution to **1920x1080** with no custom CSS. The overlay background is transparent.
 
 ## How It Works
 
@@ -126,18 +155,8 @@ The scoreboard has three sync modes, auto-detected by priority:
 2. **LAN** (served over `http:` without `?bin=`) — Controller POSTs to the local server, overlay polls it every 1s.
 3. **Local** (`file://` protocol) — Controller writes to localStorage, overlay syncs via browser storage events. Only works within the same browser.
 
-## Drop Me a Line
-If you found this at all useful, or have some suggestions, please let me know! You can drop me a line on twitter ([@tarikfayad](https://twitter.com/tarikfayad)), find me on Twitch ([ImpurestClub](https://www.twitch.tv/impurestclub/)), or ping me on my Discord server ([Link](https://discord.gg/ykj8tsN)).
-
-Also, feel free to check out a much bigger project I've been working on called **WASD**. It's a search engine for teammates/sparring partners along with a pretty comprehensive tournament calendar. You can find it here: https://wasdgaming.gg
-
-If you've really found this useful, feel free to <br>
-<a href="https://www.buymeacoffee.com/tarik" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: 41px !important;width: 174px !important;box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;-webkit-box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;" ></a>
-
-## Thank Yous
-Massive thank you to TheSassageKing for making the initial [4 hour YouTube tutorial this is based on](https://www.youtube.com/watch?v=qqyFknxaVWo). The general look of the board and a good chunk of the code's skeleton comes from following that video.
-
-Also, thank you to [u/Brylark](https://www.reddit.com/r/VALORANT/comments/g0747t/valorant_font/) over on Reddit for making the VALORANT font that I've included in the repo and plan to use myself for the time being.
+## Contact
+If you found this useful or have suggestions, feel free to reach out! Find me on Twitch at [wukrit](https://www.twitch.tv/wukrit).
 
 ## Screenshots
 <p align="center">
@@ -146,4 +165,4 @@ Also, thank you to [u/Brylark](https://www.reddit.com/r/VALORANT/comments/g0747t
 </p>
 
 ## License
-Usage is provided under the [MIT License](http://http//opensource.org/licenses/mit-license.php). See LICENSE for the full details.
+Usage is provided under the [MIT License](https://opensource.org/licenses/MIT). See LICENSE for the full details.
