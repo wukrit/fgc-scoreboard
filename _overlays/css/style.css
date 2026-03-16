@@ -33,10 +33,10 @@ body .wrappers .teams {
   color: #e5e5e5;
 }
 body #p1Wrapper {
-  left: 360px;
+  left: 348px;
 }
 body #p2Wrapper {
-  left: 1226px;
+  left: 1216px;
 }
 body .scores {
   position: absolute;
@@ -53,7 +53,7 @@ body #p1Score {
   left: 295px;
 }
 body #p2Score {
-  left: 1582px;
+  left: 1576px;
 }
 body #round {
   position: absolute;
