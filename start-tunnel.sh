@@ -13,6 +13,13 @@ fi
 command -v python3 >/dev/null 2>&1 || { echo "python3 required"; exit 1; }
 command -v cloudflared >/dev/null 2>&1 || { echo "cloudflared required — brew install cloudflared"; exit 1; }
 
+# Kill any existing process on the port
+if lsof -i :"$PORT" >/dev/null 2>&1; then
+  echo "Port $PORT already in use, killing existing process..."
+  lsof -i :"$PORT" | grep -v "^COMMAND" | awk '{print $2}' | xargs -r kill -9 2>/dev/null || true
+  sleep 1
+fi
+
 # Cleanup on exit
 cleanup() {
   echo ""
