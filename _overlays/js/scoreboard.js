@@ -30,13 +30,16 @@ function init(){
 	// --- Helper: shrink font until element content fits within its bounds ---
 	// Uses a ratio-based approach to minimize forced reflows (2 instead of N).
 	function shrinkToFit(el, defaultSize) {
-		el.style.fontSize = defaultSize;
+		var size = parseFloat(defaultSize);
+		el.style.fontSize = size + 'px';
+		// Only shrink if needed, max 2 sizes down to avoid aggressive scaling
 		var ratio = Math.min(
 			el.offsetWidth / Math.max(el.scrollWidth, 1),
 			el.offsetHeight / Math.max(el.scrollHeight, 1)
 		);
 		if (ratio < 1) {
-			el.style.fontSize = (parseFloat(defaultSize) * ratio * 0.95) + 'px';
+			var newSize = Math.max(size - 2, Math.floor(size * ratio));
+			el.style.fontSize = newSize + 'px';
 		}
 	}
 

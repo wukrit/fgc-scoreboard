@@ -57,9 +57,9 @@ body #p2Score {
 }
 body #round {
   position: absolute;
-  width: 210px;
+  width: 240px;
   height: 36px;
-  left: 856px;
+  left: 840px;
   line-height: 36px;
   text-align: center;
   font-size: 22px;
@@ -206,3 +206,5 @@ body .p2s-animation {
     opacity: 1;
   }
 }
+
+/*# sourceMappingURL=style.css.map */
