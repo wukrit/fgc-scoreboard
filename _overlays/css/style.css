@@ -36,7 +36,7 @@ body #p1Wrapper {
   left: 348px;
 }
 body #p2Wrapper {
-  left: 1216px;
+  left: 1220px;
 }
 body .scores {
   position: absolute;
@@ -53,7 +53,7 @@ body #p1Score {
   left: 295px;
 }
 body #p2Score {
-  left: 1585px;
+  left: 1580px;
 }
 body #round {
   position: absolute;
@@ -102,7 +102,7 @@ body #leftBGWrapper {
   left: 290px;
 }
 body #rightBGWrapper {
-  left: 1205px;
+  left: 1200px;
 }
 body .playerBG {
   background-color: rgba(0, 0, 0, 0.85);
