@@ -130,6 +130,7 @@ body .scoreBG {
 }
 body #p1ScoreBG {
   background-color: #ff4444;
+  left: 2px;
   transform: skewX(20deg);
 }
 body #p2ScoreBG {
