@@ -63,11 +63,11 @@ body {
   }
 
   #p1Score {
-    left: 295px;
+    left: 290px;
   }
 
   #p2Score {
-    left: 1576px;
+    left: 1582px;
   }
 
   #round {
@@ -157,12 +157,13 @@ body {
 
   #p1ScoreBG {
     background-color: $p1-accent;
+    left: -5px;
     transform: skewX(20deg);
   }
 
   #p2ScoreBG {
     background-color: $p2-accent;
-    left: 375px;
+    left: 381px;
     transform: skewX(-20deg);
   }
 
