@@ -6,7 +6,29 @@ FGC Scoreboard is an HTML and CSS scoreboard overlay for fighting game tournamen
 
 ## Quick Start
 
-There are two ways to use FGC Scoreboard: **LAN mode** (recommended for tournaments) and **Remote mode** (for online setups).
+There are three ways to use FGC Scoreboard: **LAN mode** (recommended for in-person tournaments), **Hosted mode** (Railway), and **Remote mode** (GitHub Pages + npoint.io).
+
+### Hosted Mode (Railway)
+
+Best for internet-accessible deployments with write protection. Requires a [Railway](https://railway.com) account.
+
+Infrastructure is defined in [`.railway/railway.ts`](.railway/railway.ts). See [deploy/railway.md](deploy/railway.md) for the full setup guide.
+
+**Quick start:**
+
+1. Deploy this repo from GitHub on Railway
+2. Set `FGC_AUTH_TOKEN` in Railway Variables (generate with `python3 server.py --generate-token`)
+3. Run `railway config apply` locally (see deploy guide)
+4. Generate a Railway domain in **Settings → Networking**
+
+**URLs:**
+
+- **Controller:** `https://<your-domain>/controller.html` (requires operator token)
+- **Overlay (OBS):** `https://<your-domain>/_overlays/scoreboard.html` (public read)
+
+> **Note:** Scores reset when Railway redeploys. The overlay URL is safe to share; keep the Bearer token secret.
+
+Optional LAN-style auth on any server: `FGC_AUTH_TOKEN=... python3 server.py`
 
 ### LAN Mode (No Internet Required)
 
@@ -32,7 +54,7 @@ To use a different port: `python3 server.py --port 9090`
 
 Best for sharing your local server over the internet with a stable URL. Requires [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/get-started/).
 
-> **Note:** The LAN server has no authentication. Anyone with your tunnel URL can read and overwrite the scoreboard. Only share the URL with trusted operators.
+> **Note:** The LAN server has no authentication by default. Set `FGC_AUTH_TOKEN` to enable Bearer auth on writes. Anyone with your tunnel URL can read/overwrite the scoreboard if auth is disabled. Only share URLs with trusted operators.
 
 **One-time setup:**
 
@@ -152,8 +174,10 @@ sass _overlays/css/style.scss _overlays/css/style.css
 The scoreboard has three sync modes, auto-detected by priority:
 
 1. **Remote** (`?bin=` parameter present) — Controller POSTs to npoint.io, overlay polls it every 1s.
-2. **LAN** (served over `http:` without `?bin=`) — Controller POSTs to the local server, overlay polls it every 1s.
+2. **LAN / Hosted** (served over `http:` or `https:` without `?bin=`) — Controller POSTs to the server, overlay polls it every 1s. When `FGC_AUTH_TOKEN` is set on the server, POSTs require a Bearer token; overlay reads stay public.
 3. **Local** (`file://` protocol) — Controller writes to localStorage, overlay syncs via browser storage events. Only works within the same browser.
+
+**Hosted (Railway):** See [deploy/railway.md](deploy/railway.md). Infrastructure as code in `.railway/railway.ts`.
 
 ## Contact
 If you found this useful or have suggestions, feel free to reach out! Find me on Twitch at [wukrit](https://www.twitch.tv/wukrit).

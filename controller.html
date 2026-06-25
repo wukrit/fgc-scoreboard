@@ -290,10 +290,122 @@
 			border: 3px solid #ffeb3b;
 			display: none;
 		}
+
+		/* --- Auth Gate --- */
+		#auth-gate {
+			position: fixed;
+			inset: 0;
+			z-index: 100;
+			background: rgba(26, 26, 46, 0.97);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 16px;
+		}
+
+		#auth-gate[hidden] {
+			display: none !important;
+		}
+
+		.auth-gate-panel {
+			background: #222244;
+			border: 3px solid #000;
+			box-shadow: 8px 8px 0 #000;
+			padding: 24px;
+			width: 100%;
+			max-width: 360px;
+		}
+
+		.auth-gate-panel h2 {
+			text-align: center;
+			color: #d4ff00;
+			margin-bottom: 16px;
+		}
+
+		.auth-gate-panel input {
+			width: 100%;
+			background: #1a1a2e;
+			border: 3px solid #000;
+			box-shadow: 3px 3px 0 #000;
+			color: #fff;
+			padding: 12px;
+			font-size: 16px;
+			margin-bottom: 12px;
+		}
+
+		.auth-gate-panel button {
+			width: 100%;
+			background: #d4ff00;
+			color: #000;
+			border: 3px solid #000;
+			box-shadow: 4px 4px 0 #000;
+			font-weight: 700;
+			text-transform: uppercase;
+			letter-spacing: 0.1em;
+			padding: 14px;
+			cursor: pointer;
+			min-height: 48px;
+		}
+
+		.auth-gate-panel button:active {
+			transform: translate(4px, 4px);
+			box-shadow: 0 0 0 #000;
+		}
+
+		#auth-gate-error {
+			color: #f44336;
+			font-size: 13px;
+			font-weight: 700;
+			text-align: center;
+			margin-top: 12px;
+			min-height: 1.2em;
+		}
+
+		.header-row {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: 12px;
+			margin-bottom: 16px;
+		}
+
+		.header-row h1 {
+			margin-bottom: 0;
+		}
+
+		#lock-btn {
+			background: #444;
+			color: #aaa;
+			border: 3px solid #000;
+			box-shadow: 3px 3px 0 #000;
+			font-size: 11px;
+			font-weight: 700;
+			text-transform: uppercase;
+			padding: 8px 10px;
+			cursor: pointer;
+			min-height: auto;
+		}
+
+		#lock-btn[hidden] {
+			display: none !important;
+		}
 	</style>
 </head>
 <body>
-	<h1>FGC Scoreboard</h1>
+	<div id="auth-gate" hidden>
+		<div class="auth-gate-panel">
+			<h2>Operator Token</h2>
+			<input type="password" id="auth-token-input" autocomplete="off" inputmode="text" placeholder="Enter token">
+			<button type="button" onclick="unlockController()">Unlock</button>
+			<p id="auth-gate-error"></p>
+		</div>
+	</div>
+
+	<div id="controller-main">
+	<div class="header-row">
+		<h1>FGC Scoreboard</h1>
+		<button type="button" id="lock-btn" onclick="lockController()" hidden>Lock</button>
+	</div>
 
 	<div id="no-bin-warning">
 		No bin ID found. Add <strong>?bin=YOUR_ID</strong> to the URL.<br>
@@ -378,13 +490,94 @@
 	</div>
 
 	<div id="status">&nbsp;</div>
+	</div>
 
 	<script>
+		var AUTH_STORAGE_KEY = 'fgc-auth-token';
+		var authRequired = false;
+
 		var urlParams = new URLSearchParams(window.location.search);
 		var binId = urlParams.get('bin');
 		var apiUrl = binId ? 'https://api.npoint.io/' + binId : null;
 		var lanMode = !binId && window.location.protocol !== 'file:';
 		var localMode = !apiUrl && !lanMode;
+
+		var bootstrapToken = urlParams.get('token');
+		if (bootstrapToken) {
+			sessionStorage.setItem(AUTH_STORAGE_KEY, bootstrapToken);
+			urlParams.delete('token');
+			var cleanQuery = urlParams.toString();
+			var cleanUrl = window.location.pathname + (cleanQuery ? '?' + cleanQuery : '');
+			history.replaceState(null, '', cleanUrl);
+		}
+
+		function getAuthToken() {
+			return sessionStorage.getItem(AUTH_STORAGE_KEY) || '';
+		}
+
+		function setAuthToken(token) {
+			if (token) sessionStorage.setItem(AUTH_STORAGE_KEY, token);
+			else sessionStorage.removeItem(AUTH_STORAGE_KEY);
+		}
+
+		function authHeaders(extra) {
+			var h = Object.assign({}, extra || {});
+			var token = getAuthToken();
+			if (token) h['Authorization'] = 'Bearer ' + token;
+			return h;
+		}
+
+		function authFetch(url, options) {
+			options = options || {};
+			options.headers = authHeaders(options.headers);
+			return fetch(url, options);
+		}
+
+		function showAuthGate() {
+			document.getElementById('auth-gate').hidden = false;
+			document.getElementById('lock-btn').hidden = true;
+		}
+
+		function hideAuthGate() {
+			document.getElementById('auth-gate').hidden = true;
+			if (authRequired) document.getElementById('lock-btn').hidden = false;
+		}
+
+		function verifyToken() {
+			return authFetch(window.location.origin + '/auth/check')
+				.then(function(r) {
+					if (r.status === 204) {
+						hideAuthGate();
+						return true;
+					}
+					setAuthToken('');
+					showAuthGate();
+					return false;
+				})
+				.catch(function() {
+					setAuthToken('');
+					showAuthGate();
+					return false;
+				});
+		}
+
+		function unlockController() {
+			var input = document.getElementById('auth-token-input');
+			var errEl = document.getElementById('auth-gate-error');
+			setAuthToken(input.value.trim());
+			errEl.textContent = '';
+			verifyToken().then(function(ok) {
+				if (!ok) errEl.textContent = 'Invalid token';
+				else input.value = '';
+			});
+		}
+
+		function lockController() {
+			setAuthToken('');
+			document.getElementById('auth-token-input').value = '';
+			document.getElementById('auth-gate-error').textContent = '';
+			showAuthGate();
+		}
 
 		if (lanMode) {
 			console.log('LAN MODE');
@@ -409,6 +602,44 @@
 			document.getElementById('game').value = data.game || '';
 		}
 
+		function loadLanData() {
+			showStatus('Loading...', 'loading');
+			authFetch(window.location.origin + '/scoreboard.json')
+				.then(function(r) { return r.json(); })
+				.then(function(data) {
+					if (data.p1Name !== undefined) populateForm(data);
+					showStatus('Loaded', 'ok');
+				})
+				.catch(function() {
+					showStatus('Could not load data from server', 'err');
+				});
+		}
+
+		function initAuthGate() {
+			authFetch(window.location.origin + '/scoreboard.json')
+				.then(function(r) {
+					authRequired = r.headers.get('X-FGC-Auth-Required') === '1';
+					if (!authRequired) {
+						return r.json().then(function(data) {
+							if (data.p1Name !== undefined) populateForm(data);
+							showStatus('Loaded', 'ok');
+						});
+					}
+					showStatus('Loading...', 'loading');
+					if (getAuthToken()) {
+						return verifyToken().then(function(ok) {
+							if (ok) loadLanData();
+							else showStatus('Enter token to continue', 'err');
+						});
+					}
+					showAuthGate();
+					showStatus('Enter token to continue', 'err');
+				})
+				.catch(function() {
+					showStatus('Could not load data from server', 'err');
+				});
+		}
+
 		// Load current state on page load
 		if (apiUrl) {
 			showStatus('Loading...', 'loading');
@@ -422,16 +653,7 @@
 					showStatus('Could not load data from bin', 'err');
 				});
 		} else if (lanMode) {
-			showStatus('Loading...', 'loading');
-			fetch(window.location.origin + '/scoreboard.json')
-				.then(function(r) { return r.json(); })
-				.then(function(data) {
-					if (data.p1Name !== undefined) populateForm(data);
-					showStatus('Loaded', 'ok');
-				})
-				.catch(function() {
-					showStatus('Could not load data from server', 'err');
-				});
+			initAuthGate();
 		} else {
 			var stored = localStorage.getItem('fgc-scoreboard-data');
 			if (stored) {
@@ -497,6 +719,7 @@
 		var isSaving = false;
 		function save() {
 			if (isSaving) return;
+			if (lanMode && authRequired && !getAuthToken()) return;
 			var formData = getFormData();
 			if (localMode) {
 				try {
@@ -510,12 +733,20 @@
 			isSaving = true;
 			var saveUrl = lanMode ? window.location.origin + '/scoreboard.json' : apiUrl;
 			showStatus('Saving...', 'loading');
-			fetch(saveUrl, {
+			var fetchFn = lanMode ? authFetch : fetch;
+			var postHeaders = { 'Content-Type': 'application/json' };
+			fetchFn(saveUrl, {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				headers: postHeaders,
 				body: JSON.stringify(formData)
 			})
 			.then(function(r) {
+				if (r.status === 401 && lanMode) {
+					setAuthToken('');
+					showAuthGate();
+					showStatus('Session expired \u2014 re-enter token', 'err');
+					throw new Error('auth');
+				}
 				if (!r.ok) throw new Error('HTTP ' + r.status);
 				showStatus(lanMode ? 'Saved (LAN)' : 'Saved', 'ok');
 			})

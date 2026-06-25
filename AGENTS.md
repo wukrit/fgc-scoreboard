@@ -17,8 +17,10 @@ For end-user setup (LAN, tunnel, remote, customization, security), see [README.m
 Three sync modes, auto-detected by priority:
 
 1. **npoint.io (remote)** — `?bin=<id>` URL parameter present → controller POSTs to npoint.io, overlay polls it every 1s
-2. **LAN server** — Page served over `http:` or `https:` without `?bin=` → controller POSTs to own origin `/scoreboard.json`, overlay polls it every 1s
+2. **LAN / hosted server** — Page served over `http:` or `https:` without `?bin=` → controller POSTs to own origin `/scoreboard.json`, overlay polls it every 1s. Hosted (Railway) uses the same client code path as LAN; optional Bearer auth when `FGC_AUTH_TOKEN` is set on the server
 3. **localStorage** — `file://` protocol, no `?bin=` → controller writes localStorage, overlay syncs via storage event
+
+**Auth (server-side):** When `FGC_AUTH_TOKEN` env var is set (≥32 chars), `POST /scoreboard.json` and `GET /auth/check` require `Authorization: Bearer <token>`. `GET /scoreboard.json`, overlay assets, `/controller.html`, and `/health` stay public. Controller shows a token gate when the server sends `X-FGC-Auth-Required: 1`.
 
 **JSON schema** (all values are strings):
 
@@ -34,19 +36,23 @@ The controller sets `timestamp` on every save. The LAN server (`server.py`) vali
 
 | Path | How |
 |------|-----|
-| LAN | `python3 server.py` — no URL params needed |
+| LAN | `python3 server.py` — no URL params; auth optional via `FGC_AUTH_TOKEN` |
+| Hosted (Railway) | GitHub deploy + `.railway/railway.ts` + `railway config apply`; see [deploy/railway.md](deploy/railway.md). Scores ephemeral on redeploy |
 | Remote | GitHub Pages + `?bin=<id>` on controller and overlay |
 | Tunnel | `./start-tunnel.sh [--port PORT]` — runs `server.py` + `cloudflared tunnel` for internet-accessible LAN (uses LAN sync mode over `https:`) |
 | Local/file | Open both pages as `file://` in the same browser |
 
-Tunnel and LAN endpoints have **no authentication**. npoint.io bins are also public. Do not share bin IDs or tunnel URLs publicly for high-stakes events.
+LAN and tunnel have **no authentication by default** (set `FGC_AUTH_TOKEN` to enable). Hosted Railway deployments should always set `FGC_AUTH_TOKEN`. npoint.io bins are public. Do not share bin IDs, tunnel URLs, or Bearer tokens publicly for high-stakes events.
 
 ### Key Files
 
 - **`README.md`** — End-user setup (LAN, tunnel, remote, customization, security)
-- **`controller.html`** — Mobile-friendly neo-brutalist web form for score entry. Pico CSS + custom overrides. Hosted on GitHub Pages (remote mode) or served by `server.py` (LAN mode).
-- **`server.py`** — Zero-dependency Python 3 HTTP server for LAN tournaments. Serves static files + GET/POST `/scoreboard.json`. Run with `python3 server.py [--port PORT]`. Creates `scoreboard.json` on startup if missing.
+- **`controller.html`** — Mobile-friendly neo-brutalist web form for score entry. Pico CSS + custom overrides. Token gate + `authFetch()` for LAN/hosted auth. Hosted on GitHub Pages (remote mode) or served by `server.py` (LAN/hosted mode).
+- **`server.py`** — Zero-dependency Python 3 HTTP server. Serves static files + GET/POST `/scoreboard.json`, `GET /health`, `GET /auth/check`. Optional Bearer auth via `FGC_AUTH_TOKEN` env or `--token`. Reads `PORT` env (Railway). Run with `python3 server.py [--port PORT] [--generate-token]`.
 - **`start-tunnel.sh`** — Cloudflare Tunnel launcher (runs `server.py` + `cloudflared tunnel`)
+- **`.railway/railway.ts`** — Railway Infrastructure as Code (service, healthcheck, env vars). Do not add `railway.toml` for the same service
+- **`package.json`** — `railway` SDK devDependency for IaC authoring only (not a runtime dep)
+- **`deploy/railway.md`** — Railway deployment guide
 - **`scoreboard.json`** — Runtime LAN state file (gitignored; created on server startup if missing)
 - **`_overlays/scoreboard.html`** — Main overlay loaded as a browser source in OBS/streaming software (1920×1080). Contains animation config variables (timing, offsets, distances) as inline `<script>` vars. `?bin=` required only in **remote** mode; LAN/local work without it.
 - **`_overlays/js/scoreboard.js`** — Core logic: mode setup, polling, game-specific layout, TweenMax animations, logo rotation, `shrinkToFit()` for long names.
@@ -62,6 +68,7 @@ Tunnel and LAN endpoints have **no authentication**. npoint.io bins are also pub
 - **Scores are sent as strings** from the controller (`String(input.value)`), clamped 0–99. The overlay compares scores as text to detect changes and trigger animations. Sending numbers instead of strings will break change detection.
 - **Remote mode requires a `?bin=<npoint_id>` URL parameter** on both `controller.html` and `scoreboard.html`. Create a free bin at https://www.npoint.io/.
 - **LAN mode requires no URL parameters** — just serve via `python3 server.py` and open the printed URLs.
+- **Bearer auth** — when enabled, controller stores token in `sessionStorage` (`fgc-auth-token`); attach to same-origin fetch only. Bootstrap via `?token=` once (stripped from URL). Overlay unchanged (public GET).
 - **Score steppers auto-save** (`adjustScore()` calls `save()`); **Swap / Reset / Clear do not** — user must hit Save to push those changes.
 - **Overlay renders user data with jQuery `.text()`** (not `.html()`) to prevent XSS.
 - **`GAME_GROUPS` in `scoreboard.js`** — data-driven game layout lookup; add new games to the appropriate array.
@@ -109,6 +116,8 @@ Animation config vars remain inline in `scoreboard.html` (`nameSize`, `adjust1/2
 
 **External runtime deps (not vendored):** Python 3 (`server.py`), optional `cloudflared` (`start-tunnel.sh`), npoint.io (remote mode).
 
+**IaC / deploy tooling (not runtime):** Node.js + Railway CLI for `.railway/railway.ts` (`npm install`, `railway config apply`).
+
 ## Development
 
 No build system or package manager. To compile SCSS → CSS, use any Sass compiler:
@@ -137,13 +146,24 @@ This prints controller and overlay URLs with the LAN IP. Open the controller on 
 
 Custom port: `python3 server.py --port 9090`
 
+**Auth testing locally:**
+
+```bash
+export FGC_AUTH_TOKEN="$(python3 server.py --generate-token)"
+FGC_AUTH_TOKEN="$FGC_AUTH_TOKEN" python3 server.py
+```
+
+### Hosted Mode (Railway)
+
+See [deploy/railway.md](deploy/railway.md). Apply infra with `railway config apply` after editing `.railway/railway.ts`.
+
 ### Tunnel Mode
 
 ```
 ./start-tunnel.sh [--port PORT]
 ```
 
-Requires prior `cloudflared` setup — see README. No authentication on the tunnel endpoint.
+Requires prior `cloudflared` setup — see README. No authentication on the tunnel endpoint unless `FGC_AUTH_TOKEN` is set on `server.py`.
 
 ## Customization
 

@@ -1,3 +1,5 @@
 scoreboard.json
 scoreboard.json.tmp
 .cloudflared/
+.env
+node_modules/
