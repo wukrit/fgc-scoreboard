@@ -183,13 +183,21 @@
 			color: #fff;
 			box-shadow: none;
 			padding: 0;
-			user-select: none;
-			cursor: default;
+			cursor: text;
 			display: flex;
 			align-items: center;
 			justify-content: center;
 			line-height: 1;
 		}
+
+		.score-display:focus {
+			outline: 3px solid #fff;
+			outline-offset: -3px;
+			border-color: #000;
+		}
+
+		.p1 .score-display:focus { outline-color: #ff4444; }
+		.p2 .score-display:focus { outline-color: #4488ff; }
 
 		/* --- Team Field --- */
 		.field-team { max-width: 100px; }
@@ -307,7 +315,7 @@
 			</div>
 			<div class="score-stepper">
 				<button type="button" class="score-btn" onclick="adjustScore('p1Score', -1)" tabindex="-1" aria-label="Decrease P1 score">&minus;</button>
-				<input type="text" readonly id="p1Score" value="0" class="score-display">
+				<input type="text" id="p1Score" value="0" class="score-display" inputmode="numeric" pattern="[0-9]*" maxlength="2" aria-label="P1 score" onblur="commitScore('p1Score')" oninput="filterScoreInput('p1Score')" onkeydown="handleScoreKeydown(event, 'p1Score')">
 				<button type="button" class="score-btn" onclick="adjustScore('p1Score', 1)" tabindex="-1" aria-label="Increase P1 score">+</button>
 			</div>
 		</section>
@@ -326,7 +334,7 @@
 			</div>
 			<div class="score-stepper">
 				<button type="button" class="score-btn" onclick="adjustScore('p2Score', -1)" tabindex="-1" aria-label="Decrease P2 score">&minus;</button>
-				<input type="text" readonly id="p2Score" value="0" class="score-display">
+				<input type="text" id="p2Score" value="0" class="score-display" inputmode="numeric" pattern="[0-9]*" maxlength="2" aria-label="P2 score" onblur="commitScore('p2Score')" oninput="filterScoreInput('p2Score')" onkeydown="handleScoreKeydown(event, 'p2Score')">
 				<button type="button" class="score-btn" onclick="adjustScore('p2Score', 1)" tabindex="-1" aria-label="Increase P2 score">+</button>
 			</div>
 		</section>
@@ -435,11 +443,38 @@
 			}
 		}
 
+		function normalizeScore(id) {
+			var input = document.getElementById(id);
+			var val = parseInt(input.value, 10);
+			if (isNaN(val)) val = 0;
+			val = Math.max(0, Math.min(99, val));
+			input.value = String(val);
+			return val;
+		}
+
+		function commitScore(id) {
+			normalizeScore(id);
+			save();
+		}
+
+		function filterScoreInput(id) {
+			var input = document.getElementById(id);
+			var digits = input.value.replace(/\D/g, '');
+			if (digits !== input.value) input.value = digits;
+		}
+
+		function handleScoreKeydown(e, id) {
+			if (e.key === 'Enter') {
+				e.preventDefault();
+				document.getElementById(id).blur();
+			}
+		}
+
 		function adjustScore(id, delta) {
 			var input = document.getElementById(id);
 			var val = parseInt(input.value, 10) || 0;
-			val = Math.max(0, Math.min(99, val + delta));
-			input.value = String(val);
+			input.value = String(val + delta);
+			normalizeScore(id);
 			save();
 		}
 
