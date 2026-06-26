@@ -28,11 +28,29 @@ pub struct Config {
 
     #[arg(long, env = "FGC_DATA_DIR", default_value = "data")]
     pub data_dir: PathBuf,
+
+    /// Disable the built-in localtunnel public URL (tunnel is on by default).
+    #[arg(long = "no-tunnel", default_value_t = false)]
+    pub no_tunnel: bool,
+
+    #[arg(long, env = "FGC_TUNNEL_HOST", default_value = "https://localtunnel.me")]
+    pub tunnel_host: String,
+
+    #[arg(long, env = "FGC_TUNNEL_SUBDOMAIN")]
+    pub tunnel_subdomain: Option<String>,
 }
 
 impl Config {
     pub fn parse_args() -> Self {
         Config::parse()
+    }
+
+    /// Public localtunnel is enabled by default; set `--no-tunnel` or `FGC_TUNNEL=0` to disable.
+    pub fn tunnel_enabled(&self) -> bool {
+        if std::env::var("FGC_TUNNEL").is_ok() {
+            return env_truthy("FGC_TUNNEL");
+        }
+        !self.no_tunnel
     }
 
     pub fn log_poll(&self) -> bool {

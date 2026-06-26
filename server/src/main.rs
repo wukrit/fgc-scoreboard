@@ -4,6 +4,7 @@ mod logging;
 mod rate_limit;
 mod routes;
 mod state;
+mod tunnel;
 
 use axum::{
     middleware,
@@ -160,12 +161,20 @@ async fn main() {
         "  Data:       {} (ephemeral on redeploy when hosted)",
         state.scoreboard_path.display()
     );
-    tracing::info!("  Controller: http://{}:{}/", lan_ip, port);
-    tracing::info!(
-        "  Overlay:    http://{}:{}/overlay/scoreboard.html",
-        lan_ip,
-        port
-    );
+    if config.tunnel_enabled() {
+        tracing::info!(
+            "  LAN:        http://{}:{}/ (local fallback)",
+            lan_ip,
+            port
+        );
+    } else {
+        tracing::info!("  Controller: http://{}:{}/", lan_ip, port);
+        tracing::info!(
+            "  Overlay:    http://{}:{}/overlay/scoreboard.html",
+            lan_ip,
+            port
+        );
+    }
     tracing::info!("Listening on {}:{} (Ctrl+C to stop)", bind, port);
     tracing::info!("  Generate token: fgc-server --generate-token");
 
@@ -182,6 +191,29 @@ async fn main() {
         std::process::exit(1);
     });
 
+    let tunnel = if config.tunnel_enabled() {
+        let host = tunnel::normalize_tunnel_host(&config.tunnel_host).unwrap_or_else(|err| {
+            eprintln!("{err}");
+            std::process::exit(1);
+        });
+        match tunnel::start_tunnel(host, config.tunnel_subdomain.clone(), port).await {
+            Ok(handle) => Some(handle),
+            Err(err) => {
+                tracing::warn!("Tunnel unavailable: {err}");
+                tracing::info!("Falling back to LAN-only mode");
+                tracing::info!("  Controller: http://{}:{}/", lan_ip, port);
+                tracing::info!(
+                    "  Overlay:    http://{}:{}/overlay/scoreboard.html",
+                    lan_ip,
+                    port
+                );
+                None
+            }
+        }
+    } else {
+        None
+    };
+
     axum::serve(
         listener,
         app.into_make_service_with_connect_info::<SocketAddr>(),
@@ -192,6 +224,10 @@ async fn main() {
         eprintln!("Server error: {e}");
         std::process::exit(1);
     });
+
+    if let Some(handle) = tunnel {
+        handle.shutdown().await;
+    }
 
     tracing::info!("Server stopped.");
 }

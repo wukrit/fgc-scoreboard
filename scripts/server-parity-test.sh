@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Smoke test for fgc-server API and static routes.
 # Usage: ./scripts/server-parity-test.sh [BASE_URL]
+#
+# Start the server locally (no tunnel): ./server/target/release/fgc-server --no-tunnel
 
 set -euo pipefail
 

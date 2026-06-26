@@ -44,10 +44,10 @@ The controller sets `timestamp` on every save. The Rust server (`fgc-server`) va
 
 | Path | How |
 |------|-----|
-| LAN | `./scripts/start.sh` or release `fgc-server` binary — no URL params; auth optional via `FGC_AUTH_TOKEN` |
+| LAN | `./scripts/start.sh` (passes `--no-tunnel`) or `fgc-server --no-tunnel` — no URL params; auth optional via `FGC_AUTH_TOKEN` |
 | Hosted (Railway) | GitHub deploy + `.railway/railway.ts` + `railway config apply`; see [deploy/railway.md](deploy/railway.md). Scores ephemeral on redeploy |
 | Remote | GitHub Pages (deploys `web/` via Actions) + `?bin=<id>` on controller and overlay |
-| Tunnel | `./scripts/start-tunnel.sh [--port PORT]` — runs `fgc-server` + `cloudflared tunnel` |
+| Tunnel | `./fgc-server` (release default) — built-in [localtunnel](https://github.com/localtunnel/localtunnel) client; `--no-tunnel` to disable |
 | Local/file | Open `web/index.html` and `web/overlay/scoreboard.html` as `file://` in the same browser |
 
 LAN and tunnel have **no authentication by default** (set `FGC_AUTH_TOKEN` to enable). Hosted Railway deployments should always set `FGC_AUTH_TOKEN`. npoint.io bins are public. Do not share bin IDs, tunnel URLs, or Bearer tokens publicly for high-stakes events.
@@ -61,9 +61,8 @@ LAN and tunnel have **no authentication by default** (set `FGC_AUTH_TOKEN` to en
 - **`web/overlay/js/scoreboard.js`** — Core overlay logic: mode setup, polling, game layout, TweenMax animations, logo rotation, `shrinkToFit()`
 - **`web/overlay/css/style.scss`** — SCSS source; compile to `style.css`
 - **`web/overlay/css/style.css`** — Compiled overlay CSS
-- **`server/`** — Rust Axum HTTP server (`fgc-server` binary). API routes + static file serving from `web/`. Env: `PORT`, `FGC_BIND`, `FGC_AUTH_TOKEN`, `FGC_ASSET_ROOT` (default `web`), `FGC_DATA_DIR` (default `data`), `FGC_RATE_LIMIT`, `FGC_LOG_*`. Run: `cargo run --manifest-path server/Cargo.toml` or `./scripts/start.sh`
-- **`scripts/start.sh`** — Start server (release binary or `cargo run`)
-- **`scripts/start-tunnel.sh`** — Cloudflare Tunnel + server
+- **`server/`** — Rust Axum HTTP server (`fgc-server` binary). API routes + static file serving from `web/`. Built-in localtunnel client (`server/src/tunnel/`). Env: `PORT`, `FGC_BIND`, `FGC_AUTH_TOKEN`, `FGC_TUNNEL`, `FGC_TUNNEL_HOST`, `FGC_TUNNEL_SUBDOMAIN`, `FGC_ASSET_ROOT` (default `web`), `FGC_DATA_DIR` (default `data`), `FGC_RATE_LIMIT`, `FGC_LOG_*`. Run: `cargo run --manifest-path server/Cargo.toml` or `./scripts/start.sh`
+- **`scripts/start.sh`** — Start server LAN-only (`--no-tunnel`; release binary or `cargo run`)
 - **`scripts/server-parity-test.sh`** — API/static smoke tests
 - **`.railway/railway.ts`** — Railway IaC (service, healthcheck, env vars)
 - **`package.json`** — `railway` SDK devDependency for IaC only
@@ -118,7 +117,7 @@ Animation config vars remain inline in `web/overlay/scoreboard.html`.
 - GreenSock/TweenMax — only `TweenMax.min.js` loaded at runtime
 - Archivo Black font (`web/overlay/fonts/ArchivoBlack-Regular.ttf`)
 
-**External runtime deps (not vendored):** Rust toolchain to build `fgc-server`, optional `cloudflared` (`scripts/start-tunnel.sh`), npoint.io (remote mode).
+**External runtime deps (not vendored):** Rust toolchain to build `fgc-server`, npoint.io (remote mode). Tunnel mode uses the public localtunnel.me service (HTTPS outbound).
 
 **IaC / deploy tooling:** Node.js + Railway CLI for `.railway/railway.ts` (`npm install`, `railway config apply`).
 
@@ -163,10 +162,11 @@ See [deploy/railway.md](deploy/railway.md). Apply infra with `railway config app
 ### Tunnel Mode
 
 ```bash
-./scripts/start-tunnel.sh [--port PORT]
+./server/target/release/fgc-server
+# LAN-only: add --no-tunnel
 ```
 
-Requires prior `cloudflared` setup — see README.
+Release binary defaults to tunnel on. If localtunnel is unreachable (offline), it falls back to LAN-only automatically. Flags: `--no-tunnel`, `--tunnel-host`, `--tunnel-subdomain`. See README for OBS browser-reminder caveat.
 
 ## Customization
 

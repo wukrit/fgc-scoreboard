@@ -3,7 +3,6 @@ scoreboard.json.tmp
 data/scoreboard.json
 data/scoreboard.json.tmp
 .playwright-mcp/
-.cloudflared/
 .env
 node_modules/
 server/target/

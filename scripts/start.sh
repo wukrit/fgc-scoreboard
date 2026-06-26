@@ -9,11 +9,11 @@ cd "$ROOT"
 BIN="$ROOT/server/target/release/fgc-server"
 
 if [ -x "$BIN" ]; then
-  exec "$BIN" "$@"
+  exec "$BIN" --no-tunnel "$@"
 fi
 
 if command -v cargo >/dev/null 2>&1; then
-  exec cargo run --manifest-path "$ROOT/server/Cargo.toml" --release -- "$@"
+  exec cargo run --manifest-path "$ROOT/server/Cargo.toml" --release -- --no-tunnel "$@"
 fi
 
 echo "fgc-server not found. Build with: cargo build --release --manifest-path server/Cargo.toml"

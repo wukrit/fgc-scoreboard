@@ -6,8 +6,8 @@ const scoreboard = service("fgc-scoreboard", {
     builder: "DOCKERFILE",
     dockerfilePath: "Dockerfile",
   },
-  // Dockerfile CMD is /app/fgc-server; keep start in sync for Railway overrides.
-  start: "/app/fgc-server",
+  // Dockerfile CMD is /app/fgc-server --no-tunnel; keep start in sync for Railway overrides.
+  start: "/app/fgc-server --no-tunnel",
   healthcheck: "/health",
   env: {
     FGC_RATE_LIMIT: "60",

@@ -63,8 +63,9 @@ Best for in-person tournaments. Download a [release archive](https://github.com/
    ```
    Or after `cargo build --release --manifest-path server/Cargo.toml`:
    ```
-   ./server/target/release/fgc-server
+   ./server/target/release/fgc-server --no-tunnel
    ```
+   Or run `./fgc-server` from a release archive — if no internet is available, it falls back to LAN automatically after a brief retry.
 2. The server auto-detects your machine's LAN IP and prints ready-to-use URLs:
    ```
    FGC Scoreboard Server
@@ -84,7 +85,7 @@ export FGC_AUTH_TOKEN="$(./server/target/release/fgc-server --generate-token)"
 FGC_AUTH_TOKEN="$FGC_AUTH_TOKEN" ./scripts/start.sh
 ```
 
-Windows: unpack the release `.zip`, then run `.\fgc-server.exe` from that folder.
+Windows: unpack the release `.zip`, then run `.\fgc-server.exe` (or `.\fgc-server.exe --no-tunnel` to skip tunnel setup entirely).
 
 ---
 
@@ -104,56 +105,40 @@ Keep [server/Cargo.toml](server/Cargo.toml) `version` in sync with the tag manua
 
 ---
 
-### Tunnel Mode (Cloudflare Tunnel)
+### Tunnel Mode (Built-in localtunnel)
 
-Best for sharing your local server over the internet with a stable URL. Requires [cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/get-started/).
+Best for sharing your local server over the internet with zero setup. The release binary starts a [localtunnel](https://github.com/localtunnel/localtunnel) public URL automatically — no extra installs.
 
-> **Note:** The LAN server has no authentication by default. Set `FGC_AUTH_TOKEN` to enable Bearer auth on writes. Anyone with your tunnel URL can read/overwrite the scoreboard if auth is disabled. Only share URLs with trusted operators.
+> **Note:** The server has no authentication by default. Set `FGC_AUTH_TOKEN` to enable Bearer auth on writes. Anyone with your tunnel URL can read/overwrite the scoreboard if auth is disabled. Only share URLs with trusted operators.
 
-**One-time setup:**
-
-1. Install cloudflared:
-   ```
-   brew install cloudflared
-   ```
-2. Login to your Cloudflare account:
-   ```
-   cloudflared tunnel login
-   ```
-3. Create a named tunnel:
-   ```
-   cloudflared tunnel create fgc-scoreboard
-   ```
-4. Create a config file at `~/.cloudflared/config.yml`:
-   ```yaml
-   tunnel: fgc-scoreboard
-   credentials-file: /path/to/.cloudflared/<TUNNEL_ID>.json
-
-   ingress:
-     - hostname: fgc.yourdomain.com
-       service: http://localhost:8080
-     - service: http_status:404
-   ```
-   Replace `<TUNNEL_ID>` with the ID printed from step 3, and `fgc.yourdomain.com` with your subdomain.
-5. Create the DNS record:
-   ```
-   cloudflared tunnel route dns fgc-scoreboard fgc.yourdomain.com
-   ```
-
-**Running:**
+**Running (release binary — tunnel on by default):**
 
 ```
-./scripts/start-tunnel.sh
+./fgc-server
 ```
 
-This starts `fgc-server` and the Cloudflare Tunnel. Your URLs will be:
+The server prints a public HTTPS URL on startup:
 
-- **Controller:** `https://fgc.yourdomain.com/`
-- **Overlay:** `https://fgc.yourdomain.com/overlay/scoreboard.html`
+- **Controller:** `https://<subdomain>.loca.lt/`
+- **Overlay:** `https://<subdomain>.loca.lt/overlay/scoreboard.html`
 
-Custom port: `./scripts/start-tunnel.sh --port 9090`
+Custom port: `./fgc-server --port 9090`
 
-Press Ctrl+C to stop both.
+Optional fixed subdomain (may not always be available):
+
+```
+./fgc-server --tunnel-subdomain my-event-name
+```
+
+LAN-only (disable tunnel): `./fgc-server --no-tunnel`
+
+**Offline fallback:** If the tunnel server cannot be reached (no internet), the server automatically falls back to LAN-only mode after a few quick retries and prints local Controller/Overlay URLs.
+
+**OBS browser reminder:** The public localtunnel service may show a one-time "Friendly Reminder" page in browsers (including OBS Browser Source). Visit the tunnel URL once in a normal browser on the streaming PC before adding the OBS source — it is suppressed for about 7 days per subdomain and IP. For events without that interstitial, self-host a [localtunnel server](https://github.com/localtunnel/server) and point `--tunnel-host` at it.
+
+**From source (repo dev):** `./scripts/start.sh` disables tunnel by default. Run the binary directly for tunnel mode, or omit `--no-tunnel` when invoking `fgc-server` yourself.
+
+Press Ctrl+C to stop the server and tunnel.
 
 ---
 

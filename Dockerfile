@@ -13,4 +13,4 @@ RUN mkdir -p /app/data
 ENV FGC_ASSET_ROOT=/app/web
 ENV FGC_DATA_DIR=/app/data
 EXPOSE 8080
-CMD ["/app/fgc-server"]
+CMD ["/app/fgc-server", "--no-tunnel"]

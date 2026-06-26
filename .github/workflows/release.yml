@@ -57,13 +57,13 @@ jobs:
           cp -r web "$NAME/web"
           mkdir -p "$NAME/data"
           printf '%s\n' \
-            'FGC Scoreboard LAN release' \
+            'FGC Scoreboard release' \
             '' \
             'Run from this folder:' \
             '  ./fgc-server' \
             '' \
-            'Controller: http://<your-ip>:8080/' \
-            'Overlay:    http://<your-ip>:8080/overlay/scoreboard.html' \
+            'A public tunnel URL will be printed on startup.' \
+            'LAN-only (no tunnel): ./fgc-server --no-tunnel' \
             > "$NAME/README-LAN.txt"
           tar czf "${NAME}.${{ matrix.archive }}" "$NAME"
 
@@ -78,13 +78,13 @@ jobs:
           Copy-Item -Recurse web "$Name/web"
           New-Item -ItemType Directory -Force -Path "$Name/data" | Out-Null
           @(
-            'FGC Scoreboard LAN release',
+            'FGC Scoreboard release',
             '',
             'Run from this folder:',
             '  .\fgc-server.exe',
             '',
-            'Controller: http://<your-ip>:8080/',
-            'Overlay:    http://<your-ip>:8080/overlay/scoreboard.html'
+            'A public tunnel URL will be printed on startup.',
+            'LAN-only (no tunnel): .\fgc-server.exe --no-tunnel'
           ) | Set-Content "$Name/README-LAN.txt"
           Compress-Archive -Path $Name -DestinationPath "${Name}.${{ matrix.archive }}"
 
