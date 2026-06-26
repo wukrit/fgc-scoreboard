@@ -51,15 +51,15 @@ jobs:
           cp "server/target/${{ matrix.target }}/release/fgc-server" "$NAME/fgc-server"
           cp -r web "$NAME/web"
           mkdir -p "$NAME/data"
-          cat > "$NAME/README-LAN.txt" <<'EOF'
-FGC Scoreboard LAN release
-
-Run from this folder:
-  ./fgc-server
-
-Controller: http://<your-ip>:8080/
-Overlay:    http://<your-ip>:8080/overlay/scoreboard.html
-EOF
+          printf '%s\n' \
+            'FGC Scoreboard LAN release' \
+            '' \
+            'Run from this folder:' \
+            '  ./fgc-server' \
+            '' \
+            'Controller: http://<your-ip>:8080/' \
+            'Overlay:    http://<your-ip>:8080/overlay/scoreboard.html' \
+            > "$NAME/README-LAN.txt"
           tar czf "${NAME}.${{ matrix.archive }}" "$NAME"
 
       - uses: actions/upload-artifact@v4
