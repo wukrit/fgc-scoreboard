@@ -33,7 +33,8 @@ railway config apply
 This creates/updates the service with:
 
 - GitHub source: `wukrit/fgc-scoreboard` (main branch)
-- Start command: `./server/target/release/fgc-server` (built by Railpack/Dockerfile)
+- Builder: Dockerfile (multi-stage Rust build)
+- Start command: `/app/fgc-server` (binary path inside the container)
 - Healthcheck: `GET /health`
 - `FGC_RATE_LIMIT=60`
 
@@ -110,6 +111,7 @@ Open `http://localhost:8080/` — the token gate appears when auth is enabled.
 
 | Issue | Fix |
 |-------|-----|
+| Deploy fails after Python → Rust migration | Ensure start command is `/app/fgc-server` (not `python3 server.py` or a host path like `./server/target/release/fgc-server`). Run `railway config plan` — IaC must match Dockerfile. |
 | Healthcheck fails | Ensure `GET /health` returns 200; check deploy logs |
 | 401 on save | Token mismatch; re-enter on controller or update Railway Variable |
 | Debug overlay/controller sync | Set `FGC_LOG_POLL=1` on the service |
