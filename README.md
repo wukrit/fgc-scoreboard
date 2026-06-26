@@ -20,8 +20,10 @@ Pick the deployment that fits your event:
 
 **URLs (LAN / Hosted / Tunnel):**
 
-- **Controller:** `https://<host>/` (also works at `/controller.html`)
-- **Overlay (OBS):** `https://<host>/_overlays/scoreboard.html` — set browser source to **1920×1080**
+- **Controller:** `https://<host>/`
+- **Overlay (OBS):** `https://<host>/overlay/scoreboard.html` — set browser source to **1920×1080**
+
+> **Migration:** If you bookmarked the old overlay path `/_overlays/scoreboard.html`, update OBS to `/overlay/scoreboard.html`.
 
 ---
 
@@ -35,7 +37,7 @@ Infrastructure is defined in [`.railway/railway.ts`](.railway/railway.ts). See [
 
 1. Deploy this repo from GitHub on Railway
 2. Run `npm install && railway link && railway config apply` (creates the service)
-3. Set `FGC_AUTH_TOKEN` in Railway Variables (generate with `python3 server.py --generate-token`)
+3. Set `FGC_AUTH_TOKEN` in Railway Variables (generate with `fgc-server --generate-token` after building, or from a release binary)
 4. Generate a Railway domain in **Settings → Networking**
 
 **Operator workflow:**
@@ -53,29 +55,33 @@ Optional one-time link for operators: `/?token=YOUR_TOKEN` (token is stripped fr
 
 ### LAN Mode (No Internet Required)
 
-Best for in-person tournaments. Requires Python 3.
+Best for in-person tournaments. Download a [release archive](https://github.com/wukrit/fgc-scoreboard/releases) (includes `fgc-server` + `web/`) or build from source with Rust.
 
-1. Run the server from the project directory:
+1. From the project directory (or unpacked release folder):
    ```
-   python3 server.py
+   ./scripts/start.sh
+   ```
+   Or after `cargo build --release --manifest-path server/Cargo.toml`:
+   ```
+   ./server/target/release/fgc-server
    ```
 2. The server auto-detects your machine's LAN IP and prints ready-to-use URLs:
    ```
    FGC Scoreboard Server
    Controller: http://<your-lan-ip>:8080/
-   Overlay:    http://<your-lan-ip>:8080/_overlays/scoreboard.html
+   Overlay:    http://<your-lan-ip>:8080/overlay/scoreboard.html
    ```
 3. Open the **Controller** URL on your phone or tablet.
 4. In OBS, add a **Browser Source** pointing to the **Overlay** URL. Set the resolution to **1920×1080**.
 5. Enter scores on the controller — score changes auto-save. Hit **Save** for name, round, game, swap, reset, or clear changes.
 
-Custom port: `python3 server.py --port 9090`
+Custom port: `./scripts/start.sh --port 9090`
 
 Optional auth (recommended for any internet-exposed LAN server):
 
 ```bash
-export FGC_AUTH_TOKEN="$(python3 server.py --generate-token)"
-FGC_AUTH_TOKEN="$FGC_AUTH_TOKEN" python3 server.py
+export FGC_AUTH_TOKEN="$(./server/target/release/fgc-server --generate-token)"
+FGC_AUTH_TOKEN="$FGC_AUTH_TOKEN" ./scripts/start.sh
 ```
 
 ---
@@ -119,15 +125,15 @@ Best for sharing your local server over the internet with a stable URL. Requires
 **Running:**
 
 ```
-./start-tunnel.sh
+./scripts/start-tunnel.sh
 ```
 
-This starts both `server.py` and the Cloudflare Tunnel. Your URLs will be:
+This starts `fgc-server` and the Cloudflare Tunnel. Your URLs will be:
 
 - **Controller:** `https://fgc.yourdomain.com/`
-- **Overlay:** `https://fgc.yourdomain.com/_overlays/scoreboard.html`
+- **Overlay:** `https://fgc.yourdomain.com/overlay/scoreboard.html`
 
-Custom port: `./start-tunnel.sh --port 9090`
+Custom port: `./scripts/start-tunnel.sh --port 9090`
 
 Press Ctrl+C to stop both.
 
@@ -142,11 +148,11 @@ Best for online tournaments or when the controller and streaming PC aren't on th
 1. Create a free JSON bin at [npoint.io](https://www.npoint.io/) and copy the bin ID.
 2. In OBS, add a **Browser Source** (1920×1080) pointing to:
    ```
-   https://yourgithubpages.url/_overlays/scoreboard.html?bin=YOUR_BIN_ID
+   https://yourgithubpages.url/overlay/scoreboard.html?bin=YOUR_BIN_ID
    ```
 3. Open the controller with the same bin ID:
    ```
-   https://yourgithubpages.url/controller.html?bin=YOUR_BIN_ID
+   https://yourgithubpages.url/?bin=YOUR_BIN_ID
    ```
 4. Enter scores on the controller — score changes auto-save. Hit **Save** for other field changes.
 
@@ -154,7 +160,7 @@ Best for online tournaments or when the controller and streaming PC aren't on th
 
 ### Local Mode (Same Browser Only)
 
-For quick testing without a server: open both `controller.html` and `_overlays/scoreboard.html` as `file://` URLs in the **same browser**. The controller writes to `localStorage` and the overlay syncs via storage events.
+For quick testing without a server: open `web/index.html` and `web/overlay/scoreboard.html` as `file://` URLs in the **same browser**. The controller writes to `localStorage` and the overlay syncs via storage events.
 
 > **Limitation:** Does not work across devices (e.g. phone controller + OBS on another machine). Use LAN, Tunnel, Hosted, or Remote mode for that.
 
@@ -198,8 +204,8 @@ Custom game names work too — they use the default layout. BBTAG and UNICLR als
 
 ### Adding a New Game
 
-1. Add the game to the `<select>` in `controller.html`.
-2. Add the game to the appropriate group in `GAME_GROUPS` at the top of `_overlays/js/scoreboard.js`:
+1. Add the game to the `<select>` in `web/index.html`.
+2. Add the game to the appropriate group in `GAME_GROUPS` at the top of `web/overlay/js/scoreboard.js`:
    ```javascript
    var GAME_GROUPS = {
        adjust1: ['BBTAG', 'SFVCE', 'TEKKEN7', 'UNICLR'],
@@ -214,17 +220,17 @@ Custom game names work too — they use the default layout. BBTAG and UNICLR als
 
 ## Customization
 
-**Colors and styling:** Edit the SCSS variables at the top of `_overlays/css/style.scss`, then compile:
+**Colors and styling:** Edit the SCSS variables at the top of `web/overlay/css/style.scss`, then compile:
 
 ```
-sass _overlays/css/style.scss _overlays/css/style.css
+sass web/overlay/css/style.scss web/overlay/css/style.css
 ```
 
 Default accents: `$p1-accent: #ff4444`, `$p2-accent: #4488ff`.
 
-**Animation timing:** Edit the inline `<script>` variables in `_overlays/scoreboard.html` (timing, offsets, distances).
+**Animation timing:** Edit the inline `<script>` variables in `web/overlay/scoreboard.html` (timing, offsets, distances).
 
-**Logos:** Add `<img>` tags with `class="logos"` inside the `#logoWrapper` div in `_overlays/scoreboard.html`. Multiple logos rotate automatically.
+**Logos:** Add `<img>` tags with `class="logos"` inside the `#logoWrapper` div in `web/overlay/scoreboard.html`. Multiple logos rotate automatically.
 
 ```html
 <div id="logoWrapper">
@@ -262,7 +268,7 @@ All scoreboard fields are strings in JSON (`p1Name`, `p1Team`, `p1Score`, `p2Nam
 
 For high-stakes events: use Hosted mode with a strong token, or LAN/Tunnel with `FGC_AUTH_TOKEN`. Do not share bin IDs, tunnel URLs, or Bearer tokens publicly.
 
-Generate a token: `python3 server.py --generate-token`
+Generate a token: `fgc-server --generate-token` (build or download the binary first)
 
 ---
 

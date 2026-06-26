@@ -2,7 +2,7 @@ import { github, project, service } from "railway/iac";
 
 const scoreboard = service("fgc-scoreboard", {
   source: github("wukrit/fgc-scoreboard"),
-  start: "python3 server.py",
+  start: "./server/target/release/fgc-server",
   healthcheck: "/health",
   env: {
     FGC_RATE_LIMIT: "60",
