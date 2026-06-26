@@ -28,13 +28,18 @@ railway config pull
 
 ## Secrets
 
-Never commit `FGC_AUTH_TOKEN`. Set it once:
+Never commit `FGC_AUTH_TOKEN`. Apply infra first (`railway config apply`), then set
+the token on the service:
 
 ```bash
-railway variables set FGC_AUTH_TOKEN="$(python3 server.py --generate-token)"
+railway variables set FGC_AUTH_TOKEN="$(python3 server.py --generate-token)" -s fgc-scoreboard
 ```
 
-The IaC file uses `preserve()` so `railway config apply` does not overwrite an existing token.
+The IaC file uses `module.exports = project(...)` (not `export default`) because tsx
+double-wraps ESM default exports and breaks `railway config plan`.
+
+Do **not** add `FGC_AUTH_TOKEN` to IaC with `preserve()` — Railway rejects that
+format when creating a new service. Set the token via CLI or dashboard instead.
 
 ## Deploy code vs deploy infra
 

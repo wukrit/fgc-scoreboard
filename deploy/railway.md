@@ -23,23 +23,10 @@ railway login
 railway link
 ```
 
-### 3. Set the auth token (secret)
+### 3. Apply infrastructure (creates the service)
 
-Generate a token locally:
-
-```bash
-python3 server.py --generate-token
-```
-
-Set it in Railway (do not commit):
-
-```bash
-railway variables set FGC_AUTH_TOKEN="YOUR_TOKEN_HERE"
-```
-
-Or use the dashboard **Variables** tab. Use a [sealed variable](https://docs.railway.com/variables) for production.
-
-### 4. Apply infrastructure
+Run this **before** setting variables — `railway variables set` fails with
+"Project has no services" until a service exists.
 
 ```bash
 railway config plan
@@ -48,12 +35,38 @@ railway config apply
 
 This creates/updates the service with:
 
+- GitHub source: `wukrit/fgc-scoreboard` (main branch)
 - Start command: `python3 server.py`
 - Healthcheck: `GET /health`
 - `FGC_RATE_LIMIT=60`
-- `FGC_AUTH_TOKEN` preserved from step 3
 
-### 5. Generate a public domain
+`FGC_AUTH_TOKEN` is **not** in IaC — set it on the service after apply (step 4).
+Using `preserve()` in IaC breaks `railway config apply` on first create.
+
+### 4. Set the auth token (secret)
+
+Generate a token locally:
+
+```bash
+python3 server.py --generate-token
+```
+
+Set it on the service (do not commit):
+
+```bash
+railway variables set FGC_AUTH_TOKEN="YOUR_TOKEN_HERE" -s fgc-scoreboard
+```
+
+Or use the dashboard **Variables** tab on the `fgc-scoreboard` service. Use a
+[sealed variable](https://docs.railway.com/variables) for production.
+
+### 5. Connect GitHub (if not already)
+
+In the Railway dashboard, confirm the `fgc-scoreboard` service is linked to the
+GitHub repo. Pushes to `main` deploy application code; `railway config apply`
+manages service settings.
+
+### 6. Generate a public domain
 
 In the Railway dashboard: **Settings → Networking → Generate Domain**.
 
@@ -65,7 +78,7 @@ domains: ["scoreboard.example.com"],
 
 Then run `railway config apply`.
 
-### 6. Verify
+### 7. Verify
 
 ```bash
 DOMAIN=https://your-app.up.railway.app
