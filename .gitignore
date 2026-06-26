@@ -7,3 +7,4 @@ data/scoreboard.json.tmp
 .env
 node_modules/
 server/target/
+docs/plans/
