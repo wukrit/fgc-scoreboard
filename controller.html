@@ -752,6 +752,21 @@
 		var lanMode = !binId && window.location.protocol !== 'file:';
 		var localMode = !apiUrl && !lanMode;
 
+		function isHostedMode() {
+			return lanMode && window.location.protocol === 'https:' && authRequired;
+		}
+
+		function updateServerModeBanner() {
+			if (!lanMode) return;
+			var warning = document.getElementById('no-bin-warning');
+			if (isHostedMode()) {
+				warning.style.display = 'none';
+				return;
+			}
+			warning.textContent = 'LAN mode - connected to ' + window.location.host;
+			warning.style.display = 'block';
+		}
+
 		var bootstrapToken = urlParams.get('token');
 		if (bootstrapToken) {
 			sessionStorage.setItem(AUTH_STORAGE_KEY, bootstrapToken);
@@ -831,10 +846,10 @@
 		}
 
 		if (lanMode) {
-			console.log('LAN MODE');
-			var warning = document.getElementById('no-bin-warning');
-			warning.textContent = 'LAN mode - connected to ' + window.location.host;
-			warning.style.display = 'block';
+			if (window.location.protocol !== 'https:') {
+				console.log('LAN MODE');
+				updateServerModeBanner();
+			}
 		} else if (localMode) {
 			console.log('LOCAL MODE');
 			var warning = document.getElementById('no-bin-warning');
@@ -945,6 +960,9 @@
 			authFetch(window.location.origin + '/scoreboard.json')
 				.then(function(r) {
 					authRequired = r.headers.get('X-FGC-Auth-Required') === '1';
+					if (isHostedMode()) console.log('HOSTED MODE');
+					else if (lanMode) console.log('LAN MODE');
+					updateServerModeBanner();
 					startSync();
 					if (authRequired) {
 						if (getAuthToken()) {
@@ -1064,7 +1082,7 @@
 				}
 				if (!r.ok) throw new Error('HTTP ' + r.status);
 				lastSyncedTimestamp = formData.timestamp;
-				showStatus(lanMode ? 'Saved (LAN)' : 'Saved', 'ok');
+				showStatus(lanMode && !isHostedMode() ? 'Saved (LAN)' : 'Saved', 'ok');
 			})
 			.catch(function(e) {
 				if (e && e.message === 'auth') return;
