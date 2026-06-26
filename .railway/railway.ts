@@ -1,4 +1,4 @@
-import { github, project, service } from "railway/iac";
+import { github, preserve, project, service } from "railway/iac";
 
 const scoreboard = service("fgc-scoreboard", {
   source: github("wukrit/fgc-scoreboard"),
@@ -11,8 +11,8 @@ const scoreboard = service("fgc-scoreboard", {
   healthcheck: "/health",
   env: {
     FGC_RATE_LIMIT: "60",
-    // FGC_AUTH_TOKEN: set after apply via `railway variables set` (see deploy/railway.md).
-    // Do not add FGC_AUTH_TOKEN here — Railway IaC would delete it on apply if omitted.
+    // Keep existing token on config apply; set initially via CLI (see deploy/railway.md).
+    FGC_AUTH_TOKEN: preserve(),
   },
   deploy: {
     limitOverride: {

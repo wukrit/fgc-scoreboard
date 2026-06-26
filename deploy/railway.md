@@ -38,7 +38,8 @@ This creates/updates the service with:
 - Healthcheck: `GET /health`
 - `FGC_RATE_LIMIT=60`
 
-`FGC_AUTH_TOKEN` is **not** in IaC — set it on the service after apply (step 4).
+`FGC_AUTH_TOKEN` is **not** stored in IaC — it uses `preserve()` so apply keeps the
+existing Railway value. Set the token on the service after first apply (step 4).
 
 ### 4. Set the auth token (secret)
 
