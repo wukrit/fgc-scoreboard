@@ -3,7 +3,7 @@
 <html lang="en" data-theme="dark">
 <head>
 	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 	<title>FGC Scoreboard Controller</title>
 	<link rel="stylesheet" href="css/pico.classless.min.css">
 	<style>
@@ -12,32 +12,88 @@
 			--pico-border-radius: 0;
 			--pico-border-width: 3px;
 			--pico-box-shadow: 4px 4px 0 #000;
+			--surface: #222244;
+			--bg: #1a1a2e;
+			--text: #f0f0f0;
+			--text-muted: #b8b8c8;
+			--p1: #ff4444;
+			--p2: #4488ff;
+			--accent: #d4ff00;
+			--focus-ring: #fff;
+			--touch-min: 48px;
+		}
+
+		@media (prefers-reduced-motion: reduce) {
+			*,
+			*::before,
+			*::after {
+				animation-duration: 0.01ms !important;
+				animation-iteration-count: 1 !important;
+				transition-duration: 0.01ms !important;
+				scroll-behavior: auto !important;
+			}
 		}
 
 		body {
-			background: #1a1a2e;
-			color: #f0f0f0;
+			background: var(--bg);
+			color: var(--text);
 			padding: 16px;
+			padding-left: max(16px, env(safe-area-inset-left));
+			padding-right: max(16px, env(safe-area-inset-right));
 			max-width: 900px;
 			margin: 0 auto;
 		}
 
+		.skip-link {
+			position: absolute;
+			left: -9999px;
+			top: auto;
+			width: 1px;
+			height: 1px;
+			overflow: hidden;
+			z-index: 200;
+			background: var(--accent);
+			color: #000;
+			font-weight: 700;
+			padding: 12px 16px;
+			border: 3px solid #000;
+			text-decoration: none;
+		}
+
+		.skip-link:focus {
+			position: fixed;
+			left: 16px;
+			top: 16px;
+			width: auto;
+			height: auto;
+			overflow: visible;
+		}
+
 		h1 {
-			font-size: 24px;
+			font-size: clamp(1.125rem, 4vw, 1.5rem);
 			font-weight: 900;
 			text-align: center;
 			text-transform: uppercase;
 			letter-spacing: 0.1em;
-			margin-bottom: 16px;
+			margin: 0;
 			color: #fff;
 		}
 
-		h2 {
+		legend,
+		.panel-title {
 			font-size: 13px;
 			font-weight: 700;
 			text-transform: uppercase;
 			letter-spacing: 0.12em;
 			margin-bottom: 12px;
+			padding: 0;
+		}
+
+		fieldset {
+			border: none;
+			margin: 0;
+			padding: 0;
+			min-width: 0;
 		}
 
 		/* --- Players Grid --- */
@@ -56,7 +112,7 @@
 
 		/* --- Player Sections --- */
 		.player-section {
-			background: #222244;
+			background: var(--surface);
 			border: 3px solid #000;
 			box-shadow: 4px 4px 0 #000;
 			padding: 16px;
@@ -64,45 +120,57 @@
 		}
 
 		.player-section.p1 {
-			border-left: 6px solid #ff4444;
+			border-left: 6px solid var(--p1);
 			background: rgba(255, 68, 68, 0.06);
 		}
-		.player-section.p1 h2 { color: #ff4444; }
+		.player-section.p1 .panel-title { color: var(--p1); }
+		.player-section.p1 { --focus-ring: var(--p1); }
 
 		.player-section.p2 {
-			border-left: 6px solid #4488ff;
+			border-left: 6px solid var(--p2);
 			background: rgba(68, 136, 255, 0.06);
 		}
-		.player-section.p2 h2 { color: #4488ff; }
+		.player-section.p2 .panel-title { color: var(--p2); }
+		.player-section.p2 { --focus-ring: var(--p2); }
 
 		/* --- Match Section --- */
 		.match-section {
-			background: #222244;
+			background: var(--surface);
 			border: 3px solid #000;
 			box-shadow: 4px 4px 0 #000;
 			padding: 16px;
 			margin-bottom: 16px;
 		}
-		.match-section h2 { color: #888; }
+		.match-section .panel-title { color: var(--text-muted); }
 
 		/* --- Form Fields --- */
 		.field-row {
 			display: flex;
-			gap: 8px;
-			margin-bottom: 10px;
+			flex-direction: column;
+			gap: 10px;
+			margin-bottom: 12px;
 		}
+
+		@media (min-width: 480px) {
+			.field-row {
+				flex-direction: row;
+				gap: 8px;
+			}
+		}
+
 		.field-row:last-child { margin-bottom: 0; }
 
 		.field {
 			flex: 1;
 			display: flex;
 			flex-direction: column;
+			min-width: 0;
 		}
 
 		.field label {
 			font-size: 11px;
 			font-weight: 700;
-			color: #888;
+			color: var(--text-muted);
 			margin-bottom: 4px;
 			text-transform: uppercase;
 			letter-spacing: 0.1em;
@@ -110,38 +178,53 @@
 
 		.field input,
 		.field select {
-			background: #1a1a2e;
+			background: var(--bg);
 			border: 3px solid #000;
 			box-shadow: 3px 3px 0 #000;
 			color: #fff;
-			padding: 10px;
+			padding: 12px;
 			font-size: 16px;
 			width: 100%;
+			min-height: var(--touch-min);
 		}
 
-		.field input:focus,
-		.field select:focus {
-			outline: 3px solid #fff;
-			outline-offset: -3px;
+		.field input::placeholder {
+			color: #7a7a8a;
+		}
+
+		.field input:focus-visible,
+		.field select:focus-visible,
+		.score-display:focus-visible,
+		.score-btn:focus-visible,
+		.button-row button:focus-visible,
+		#lock-btn:focus-visible,
+		.auth-gate-panel input:focus-visible,
+		.auth-gate-panel button:focus-visible {
+			outline: 3px solid var(--focus-ring, #fff);
+			outline-offset: 2px;
 			border-color: #000;
 		}
 
-		.p1 .field input:focus { outline-color: #ff4444; }
-		.p2 .field input:focus { outline-color: #4488ff; }
+		.match-section,
+		#controller-main {
+			--focus-ring: var(--accent);
+		}
 
 		/* --- Score Stepper --- */
 		.score-stepper {
 			display: flex;
-			align-items: center;
+			align-items: stretch;
 			gap: 0;
-			margin-top: 8px;
+			margin-top: 4px;
+			width: 100%;
 		}
 
 		.score-stepper .score-btn {
-			width: 56px;
-			height: 56px;
-			min-height: 48px;
-			font-size: 24px;
+			flex: 0 0 64px;
+			width: 64px;
+			min-height: var(--touch-min);
+			height: auto;
+			font-size: 28px;
 			font-weight: 900;
 			border: 3px solid #000;
 			box-shadow: 3px 3px 0 #000;
@@ -160,18 +243,27 @@
 			letter-spacing: 0;
 		}
 
-		.p1 .score-btn { background: #ff4444; color: #000; }
-		.p2 .score-btn { background: #4488ff; color: #000; }
+		.p1 .score-btn { background: var(--p1); color: #000; }
+		.p2 .score-btn { background: var(--p2); color: #000; }
 
-		.score-stepper .score-btn:active {
-			transform: translate(3px, 3px);
-			box-shadow: 0 0 0 #000;
+		@media (prefers-reduced-motion: no-preference) {
+			.score-stepper .score-btn:active,
+			.button-row button:active,
+			.auth-gate-panel button:active {
+				transform: translate(3px, 3px);
+				box-shadow: 0 0 0 #000;
+			}
+
+			.button-row button:active {
+				transform: translate(4px, 4px);
+			}
 		}
 
 		.score-display {
-			width: 72px;
-			height: 56px;
-			font-size: 36px;
+			flex: 1;
+			min-width: 72px;
+			min-height: var(--touch-min);
+			font-size: clamp(2rem, 8vw, 2.25rem);
 			font-weight: 900;
 			font-variant-numeric: tabular-nums;
 			text-align: center;
@@ -190,23 +282,59 @@
 			line-height: 1;
 		}
 
-		.score-display:focus {
-			outline: 3px solid #fff;
-			outline-offset: -3px;
-			border-color: #000;
+		/* --- Team Field --- */
+		@media (min-width: 480px) {
+			.field-team {
+				flex: 0 0 112px;
+				max-width: 112px;
+			}
 		}
 
-		.p1 .score-display:focus { outline-color: #ff4444; }
-		.p2 .score-display:focus { outline-color: #4488ff; }
+		.field-hint {
+			font-size: 12px;
+			color: var(--text-muted);
+			margin-top: 6px;
+		}
 
-		/* --- Team Field --- */
-		.field-team { max-width: 100px; }
+		.game-mode-toggle {
+			background: none;
+			border: none;
+			box-shadow: none;
+			color: var(--accent);
+			font-size: 12px;
+			font-weight: 700;
+			text-transform: uppercase;
+			letter-spacing: 0.08em;
+			padding: 8px 0 0;
+			margin: 0;
+			cursor: pointer;
+			text-align: left;
+			min-height: auto;
+			text-decoration: underline;
+			text-underline-offset: 2px;
+			touch-action: manipulation;
+		}
+
+		.game-mode-toggle:focus-visible {
+			outline: 3px solid var(--accent);
+			outline-offset: 2px;
+		}
+
+		.game-field [hidden] {
+			display: none !important;
+		}
 
 		/* --- Buttons --- */
+		.actions-wrap {
+			display: flex;
+			flex-direction: column;
+			gap: 8px;
+			margin-bottom: 8px;
+		}
+
 		.button-row {
 			display: flex;
 			gap: 8px;
-			margin-bottom: 8px;
 		}
 
 		.button-row button {
@@ -217,22 +345,17 @@
 			font-weight: 700;
 			text-transform: uppercase;
 			letter-spacing: 0.1em;
-			padding: 14px 8px;
+			padding: 14px 12px;
 			cursor: pointer;
 			transition: transform 0.08s;
-			min-height: 48px;
+			min-height: var(--touch-min);
 			touch-action: manipulation;
 			user-select: none;
 			-webkit-tap-highlight-color: transparent;
 		}
 
-		.button-row button:active {
-			transform: translate(4px, 4px);
-			box-shadow: 0 0 0 #000;
-		}
-
 		.btn-save {
-			background: #d4ff00;
+			background: var(--accent);
 			color: #000;
 		}
 		.btn-swap {
@@ -241,12 +364,45 @@
 		}
 		.btn-reset {
 			background: #2a2a2a;
-			color: #aaa;
+			color: #ddd;
 		}
 		.btn-clear {
 			background: #1a1a1a;
-			color: #666;
-			font-size: 12px;
+			color: #aaa;
+			font-size: 13px;
+		}
+
+		/* Sticky primary actions on mobile */
+		.actions-primary {
+			margin-bottom: 0;
+		}
+
+		@media (max-width: 767px) {
+			body.has-sticky-actions {
+				padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+			}
+
+			.actions-primary {
+				position: fixed;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				z-index: 40;
+				margin: 0;
+				padding: 12px 16px;
+				padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+				padding-left: max(16px, env(safe-area-inset-left));
+				padding-right: max(16px, env(safe-area-inset-right));
+				background: var(--bg);
+				border-top: 3px solid #000;
+				box-shadow: 0 -4px 0 rgba(0, 0, 0, 0.35);
+			}
+
+			.actions-primary .btn-save,
+			.actions-primary .btn-swap {
+				min-height: 52px;
+				font-size: 15px;
+			}
 		}
 
 		/* --- Status Indicator --- */
@@ -264,12 +420,12 @@
 
 		.status-ok {
 			background: #0a3d0a;
-			color: #4caf50;
+			color: #6ee06e;
 			border-color: #4caf50 !important;
 		}
 		.status-err {
 			background: #3d0a0a;
-			color: #f44336;
+			color: #ff6b6b;
 			border-color: #f44336 !important;
 		}
 		.status-loading {
@@ -280,7 +436,7 @@
 
 		/* --- Mode Warning --- */
 		#no-bin-warning {
-			background: #222244;
+			background: var(--surface);
 			color: #ffeb3b;
 			text-align: center;
 			padding: 12px;
@@ -289,6 +445,11 @@
 			font-weight: 700;
 			border: 3px solid #ffeb3b;
 			display: none;
+		}
+
+		#no-bin-warning a {
+			color: #ffeb3b;
+			text-underline-offset: 2px;
 		}
 
 		/* --- Auth Gate --- */
@@ -301,6 +462,8 @@
 			align-items: center;
 			justify-content: center;
 			padding: 16px;
+			padding-left: max(16px, env(safe-area-inset-left));
+			padding-right: max(16px, env(safe-area-inset-right));
 		}
 
 		#auth-gate[hidden] {
@@ -308,7 +471,7 @@
 		}
 
 		.auth-gate-panel {
-			background: #222244;
+			background: var(--surface);
 			border: 3px solid #000;
 			box-shadow: 8px 8px 0 #000;
 			padding: 24px;
@@ -318,24 +481,35 @@
 
 		.auth-gate-panel h2 {
 			text-align: center;
-			color: #d4ff00;
+			color: var(--accent);
 			margin-bottom: 16px;
+		}
+
+		.auth-gate-panel label {
+			display: block;
+			font-size: 11px;
+			font-weight: 700;
+			color: var(--text-muted);
+			margin-bottom: 6px;
+			text-transform: uppercase;
+			letter-spacing: 0.1em;
 		}
 
 		.auth-gate-panel input {
 			width: 100%;
-			background: #1a1a2e;
+			background: var(--bg);
 			border: 3px solid #000;
 			box-shadow: 3px 3px 0 #000;
 			color: #fff;
 			padding: 12px;
 			font-size: 16px;
 			margin-bottom: 12px;
+			min-height: var(--touch-min);
 		}
 
 		.auth-gate-panel button {
 			width: 100%;
-			background: #d4ff00;
+			background: var(--accent);
 			color: #000;
 			border: 3px solid #000;
 			box-shadow: 4px 4px 0 #000;
@@ -344,16 +518,11 @@
 			letter-spacing: 0.1em;
 			padding: 14px;
 			cursor: pointer;
-			min-height: 48px;
-		}
-
-		.auth-gate-panel button:active {
-			transform: translate(4px, 4px);
-			box-shadow: 0 0 0 #000;
+			min-height: var(--touch-min);
 		}
 
 		#auth-gate-error {
-			color: #f44336;
+			color: #ff6b6b;
 			font-size: 13px;
 			font-weight: 700;
 			text-align: center;
@@ -361,29 +530,26 @@
 			min-height: 1.2em;
 		}
 
-		.header-row {
+		.page-header {
 			display: flex;
 			align-items: center;
 			justify-content: center;
 			gap: 12px;
 			margin-bottom: 16px;
-		}
-
-		.header-row h1 {
-			margin-bottom: 0;
+			flex-wrap: wrap;
 		}
 
 		#lock-btn {
 			background: #444;
-			color: #aaa;
+			color: #ddd;
 			border: 3px solid #000;
 			box-shadow: 3px 3px 0 #000;
 			font-size: 11px;
 			font-weight: 700;
 			text-transform: uppercase;
-			padding: 8px 10px;
+			padding: 10px 12px;
 			cursor: pointer;
-			min-height: auto;
+			min-height: var(--touch-min);
 		}
 
 		#lock-btn[hidden] {
@@ -391,110 +557,194 @@
 		}
 	</style>
 </head>
-<body>
-	<div id="auth-gate" hidden>
+<body class="has-sticky-actions">
+	<a class="skip-link" href="#controller-main">Skip to controller</a>
+
+	<div id="auth-gate" hidden role="dialog" aria-modal="true" aria-labelledby="auth-gate-title">
 		<div class="auth-gate-panel">
-			<h2>Operator Token</h2>
-			<input type="password" id="auth-token-input" autocomplete="off" inputmode="text" placeholder="Enter token">
-			<button type="button" onclick="unlockController()">Unlock</button>
-			<p id="auth-gate-error"></p>
+			<h2 id="auth-gate-title">Operator Token</h2>
+			<form id="auth-gate-form" onsubmit="event.preventDefault(); unlockController();">
+				<label for="auth-token-input">Access token</label>
+				<input type="password" id="auth-token-input" name="token" autocomplete="off" inputmode="text" placeholder="Enter token" aria-describedby="auth-gate-error">
+				<button type="submit">Unlock</button>
+			</form>
+			<p id="auth-gate-error" role="alert"></p>
 		</div>
 	</div>
 
-	<div id="controller-main">
-	<div class="header-row">
-		<h1>FGC Scoreboard</h1>
-		<button type="button" id="lock-btn" onclick="lockController()" hidden>Lock</button>
-	</div>
+	<main id="controller-main">
+		<header class="page-header">
+			<h1>FGC Scoreboard</h1>
+			<button type="button" id="lock-btn" onclick="lockController()" hidden aria-label="Lock controller and require token again">Lock</button>
+		</header>
 
-	<div id="no-bin-warning">
-		No bin ID found. Add <strong>?bin=YOUR_ID</strong> to the URL.<br>
-		Create a free bin at <a href="https://www.npoint.io" target="_blank" style="color:#ffeb3b;">npoint.io</a>
-	</div>
-
-	<div class="players-grid">
-		<section class="player-section p1">
-			<h2>Player 1</h2>
-			<div class="field-row">
-				<div class="field">
-					<label>Name</label>
-					<input type="text" id="p1Name" placeholder="Player 1" maxlength="64">
-				</div>
-				<div class="field field-team">
-					<label>Team</label>
-					<input type="text" id="p1Team" placeholder="Team" maxlength="32">
-				</div>
-			</div>
-			<div class="score-stepper">
-				<button type="button" class="score-btn" onclick="adjustScore('p1Score', -1)" tabindex="-1" aria-label="Decrease P1 score">&minus;</button>
-				<input type="text" id="p1Score" value="0" class="score-display" inputmode="numeric" pattern="[0-9]*" maxlength="2" aria-label="P1 score" onblur="commitScore('p1Score')" oninput="filterScoreInput('p1Score')" onkeydown="handleScoreKeydown(event, 'p1Score')">
-				<button type="button" class="score-btn" onclick="adjustScore('p1Score', 1)" tabindex="-1" aria-label="Increase P1 score">+</button>
-			</div>
-		</section>
-
-		<section class="player-section p2">
-			<h2>Player 2</h2>
-			<div class="field-row">
-				<div class="field">
-					<label>Name</label>
-					<input type="text" id="p2Name" placeholder="Player 2" maxlength="64">
-				</div>
-				<div class="field field-team">
-					<label>Team</label>
-					<input type="text" id="p2Team" placeholder="Team" maxlength="32">
-				</div>
-			</div>
-			<div class="score-stepper">
-				<button type="button" class="score-btn" onclick="adjustScore('p2Score', -1)" tabindex="-1" aria-label="Decrease P2 score">&minus;</button>
-				<input type="text" id="p2Score" value="0" class="score-display" inputmode="numeric" pattern="[0-9]*" maxlength="2" aria-label="P2 score" onblur="commitScore('p2Score')" oninput="filterScoreInput('p2Score')" onkeydown="handleScoreKeydown(event, 'p2Score')">
-				<button type="button" class="score-btn" onclick="adjustScore('p2Score', 1)" tabindex="-1" aria-label="Increase P2 score">+</button>
-			</div>
-		</section>
-	</div>
-
-	<section class="match-section">
-		<h2>Match Info</h2>
-		<div class="field-row">
-			<div class="field">
-				<label>Round</label>
-				<input type="text" id="round" placeholder="e.g. Grand Finals" maxlength="64">
-			</div>
-			<div class="field">
-				<label>Game</label>
-				<input type="text" id="game" list="games" placeholder="e.g. SF6" maxlength="32">
-				<datalist id="games">
-					<option value="BBCF">
-					<option value="BBTAG">
-					<option value="DBFZ">
-					<option value="GGXRD">
-					<option value="KOFXIV">
-					<option value="MVCI">
-					<option value="SF6">
-					<option value="SFVCE">
-					<option value="TEKKEN7">
-					<option value="UMVC3">
-					<option value="UNICLR">
-					<option value="USF4">
-				</datalist>
-			</div>
+		<div id="no-bin-warning" role="status" aria-live="polite">
+			No bin ID found. Add <strong>?bin=YOUR_ID</strong> to the URL.<br>
+			Create a free bin at <a href="https://www.npoint.io" target="_blank" rel="noopener noreferrer">npoint.io</a>
 		</div>
-	</section>
 
-	<div class="button-row">
-		<button class="btn-save" onclick="save()">Save</button>
-		<button class="btn-swap" onclick="swap()">Swap</button>
-	</div>
-	<div class="button-row">
-		<button class="btn-reset" onclick="resetScores()">Reset</button>
-		<button class="btn-clear" onclick="clearAll()">Clear</button>
-	</div>
+		<form id="scoreboard-form" onsubmit="event.preventDefault(); save();" aria-describedby="status">
+			<div class="players-grid">
+				<section class="player-section p1" aria-labelledby="p1-heading">
+					<fieldset>
+						<legend id="p1-heading" class="panel-title">Player 1</legend>
+						<div class="field-row">
+							<div class="field">
+								<label for="p1Name">Name</label>
+								<input type="text" id="p1Name" name="p1Name" placeholder="Player 1" maxlength="64" autocomplete="off">
+							</div>
+							<div class="field field-team">
+								<label for="p1Team">Team</label>
+								<input type="text" id="p1Team" name="p1Team" placeholder="Team" maxlength="32" autocomplete="off">
+							</div>
+						</div>
+						<div class="score-stepper" role="group" aria-labelledby="p1-score-label">
+							<span id="p1-score-label" class="visually-hidden">Player 1 score</span>
+							<button type="button" class="score-btn" onclick="adjustScore('p1Score', -1)" aria-label="Decrease Player 1 score">&minus;</button>
+							<input type="text" id="p1Score" name="p1Score" value="0" class="score-display" inputmode="numeric" pattern="[0-9]*" maxlength="2" aria-label="Player 1 score" onblur="commitScore('p1Score')" oninput="filterScoreInput('p1Score')" onkeydown="handleScoreKeydown(event, 'p1Score')">
+							<button type="button" class="score-btn" onclick="adjustScore('p1Score', 1)" aria-label="Increase Player 1 score">+</button>
+						</div>
+					</fieldset>
+				</section>
 
-	<div id="status">&nbsp;</div>
-	</div>
+				<section class="player-section p2" aria-labelledby="p2-heading">
+					<fieldset>
+						<legend id="p2-heading" class="panel-title">Player 2</legend>
+						<div class="field-row">
+							<div class="field">
+								<label for="p2Name">Name</label>
+								<input type="text" id="p2Name" name="p2Name" placeholder="Player 2" maxlength="64" autocomplete="off">
+							</div>
+							<div class="field field-team">
+								<label for="p2Team">Team</label>
+								<input type="text" id="p2Team" name="p2Team" placeholder="Team" maxlength="32" autocomplete="off">
+							</div>
+						</div>
+						<div class="score-stepper" role="group" aria-labelledby="p2-score-label">
+							<span id="p2-score-label" class="visually-hidden">Player 2 score</span>
+							<button type="button" class="score-btn" onclick="adjustScore('p2Score', -1)" aria-label="Decrease Player 2 score">&minus;</button>
+							<input type="text" id="p2Score" name="p2Score" value="0" class="score-display" inputmode="numeric" pattern="[0-9]*" maxlength="2" aria-label="Player 2 score" onblur="commitScore('p2Score')" oninput="filterScoreInput('p2Score')" onkeydown="handleScoreKeydown(event, 'p2Score')">
+							<button type="button" class="score-btn" onclick="adjustScore('p2Score', 1)" aria-label="Increase Player 2 score">+</button>
+						</div>
+					</fieldset>
+				</section>
+			</div>
+
+			<section class="match-section" aria-labelledby="match-heading">
+				<fieldset>
+					<legend id="match-heading" class="panel-title">Match Info</legend>
+					<div class="field-row">
+						<div class="field">
+							<label for="round">Round</label>
+							<input type="text" id="round" name="round" placeholder="e.g. Grand Finals" maxlength="64" autocomplete="off">
+						</div>
+						<div class="field game-field">
+							<label for="game-select">Game</label>
+							<select id="game-select" aria-describedby="game-hint">
+								<option value="">Select game</option>
+								<option value="BBCF">BBCF</option>
+								<option value="BBTAG">BBTAG</option>
+								<option value="DBFZ">DBFZ</option>
+								<option value="GGXRD">GGXRD</option>
+								<option value="KOFXIV">KOFXIV</option>
+								<option value="MVCI">MVCI</option>
+								<option value="SF6">SF6</option>
+								<option value="SFVCE">SFVCE</option>
+								<option value="TEKKEN7">TEKKEN7</option>
+								<option value="UMVC3">UMVC3</option>
+								<option value="UNICLR">UNICLR</option>
+								<option value="USF4">USF4</option>
+							</select>
+							<input type="text" id="game-custom" hidden maxlength="32" placeholder="Custom game name" autocomplete="off" aria-label="Custom game name" aria-describedby="game-hint">
+							<button type="button" class="game-mode-toggle" id="game-mode-toggle" onclick="toggleGameMode()">Enter custom name</button>
+							<p id="game-hint" class="field-hint">Choose a preset from the list.</p>
+						</div>
+					</div>
+				</fieldset>
+			</section>
+
+			<div class="actions-wrap">
+				<div class="button-row actions-secondary" role="group" aria-label="Secondary match actions">
+					<button type="button" class="btn-reset" onclick="resetScores()">Reset Scores</button>
+					<button type="button" class="btn-clear" onclick="clearAll()">Clear All</button>
+				</div>
+				<div class="button-row actions-primary" role="group" aria-label="Primary match actions">
+					<button type="submit" class="btn-save">Save</button>
+					<button type="button" class="btn-swap" onclick="swap()">Swap</button>
+				</div>
+			</div>
+		</form>
+
+		<div id="status" role="status" aria-live="polite" aria-atomic="true">&nbsp;</div>
+	</main>
+
+	<style>
+		.visually-hidden {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			padding: 0;
+			margin: -1px;
+			overflow: hidden;
+			clip: rect(0, 0, 0, 0);
+			white-space: nowrap;
+			border: 0;
+		}
+	</style>
 
 	<script>
 		var AUTH_STORAGE_KEY = 'fgc-auth-token';
 		var authRequired = false;
+		var GAME_PRESETS = ['BBCF', 'BBTAG', 'DBFZ', 'GGXRD', 'KOFXIV', 'MVCI', 'SF6', 'SFVCE', 'TEKKEN7', 'UMVC3', 'UNICLR', 'USF4'];
+
+		function isPresetGame(val) {
+			return GAME_PRESETS.indexOf(val) !== -1;
+		}
+
+		function showCustomGame(show) {
+			var customEl = document.getElementById('game-custom');
+			var selectEl = document.getElementById('game-select');
+			var toggleEl = document.getElementById('game-mode-toggle');
+			var hintEl = document.getElementById('game-hint');
+			customEl.hidden = !show;
+			selectEl.hidden = show;
+			toggleEl.textContent = show ? 'Use preset list' : 'Enter custom name';
+			hintEl.textContent = show ? 'Type any game name.' : 'Choose a preset from the list.';
+		}
+
+		function toggleGameMode() {
+			var customEl = document.getElementById('game-custom');
+			var goingCustom = customEl.hidden;
+			if (goingCustom) {
+				var selected = document.getElementById('game-select').value;
+				if (selected) customEl.value = selected;
+				showCustomGame(true);
+				customEl.focus();
+				return;
+			}
+			var typed = customEl.value.trim();
+			if (isPresetGame(typed)) document.getElementById('game-select').value = typed;
+			else document.getElementById('game-select').value = '';
+			showCustomGame(false);
+		}
+
+		function getGameValue() {
+			var customEl = document.getElementById('game-custom');
+			if (!customEl.hidden) return customEl.value.trim();
+			return document.getElementById('game-select').value;
+		}
+
+		function setGameValue(val) {
+			val = val || '';
+			if (val && !isPresetGame(val)) {
+				document.getElementById('game-custom').value = val;
+				showCustomGame(true);
+				return;
+			}
+			document.getElementById('game-select').value = val;
+			document.getElementById('game-custom').value = '';
+			showCustomGame(false);
+		}
 
 		var urlParams = new URLSearchParams(window.location.search);
 		var binId = urlParams.get('bin');
@@ -536,6 +786,7 @@
 		function showAuthGate() {
 			document.getElementById('auth-gate').hidden = false;
 			document.getElementById('lock-btn').hidden = true;
+			document.getElementById('auth-token-input').focus();
 		}
 
 		function hideAuthGate() {
@@ -582,12 +833,12 @@
 		if (lanMode) {
 			console.log('LAN MODE');
 			var warning = document.getElementById('no-bin-warning');
-			warning.textContent = 'LAN mode \u2014 connected to ' + window.location.host;
+			warning.textContent = 'LAN mode - connected to ' + window.location.host;
 			warning.style.display = 'block';
 		} else if (localMode) {
 			console.log('LOCAL MODE');
 			var warning = document.getElementById('no-bin-warning');
-			warning.textContent = 'Local mode \u2014 data saved to this browser only.';
+			warning.textContent = 'Local mode - data saved to this browser only.';
 			warning.style.display = 'block';
 		}
 
@@ -599,7 +850,7 @@
 			document.getElementById('p2Team').value = data.p2Team || '';
 			document.getElementById('p2Score').value = data.p2Score || '0';
 			document.getElementById('round').value = data.round || '';
-			document.getElementById('game').value = data.game || '';
+			setGameValue(data.game || '');
 		}
 
 		function loadLanData() {
@@ -711,7 +962,7 @@
 				p2Team: document.getElementById('p2Team').value,
 				p2Score: String(Math.max(0, Math.min(99, p2Raw))),
 				round: document.getElementById('round').value,
-				game: document.getElementById('game').value,
+				game: getGameValue(),
 				timestamp: String(Math.floor(Date.now() / 1000))
 			};
 		}
@@ -744,14 +995,15 @@
 				if (r.status === 401 && lanMode) {
 					setAuthToken('');
 					showAuthGate();
-					showStatus('Session expired \u2014 re-enter token', 'err');
+					showStatus('Session expired - re-enter token', 'err');
 					throw new Error('auth');
 				}
 				if (!r.ok) throw new Error('HTTP ' + r.status);
 				showStatus(lanMode ? 'Saved (LAN)' : 'Saved', 'ok');
 			})
 			.catch(function(e) {
-				showStatus('Save failed \u2014 check server connection', 'err');
+				if (e && e.message === 'auth') return;
+				showStatus('Save failed - check server connection', 'err');
 			})
 			.finally(function() {
 				isSaving = false;
@@ -782,7 +1034,7 @@
 			document.getElementById('p2Team').value = '';
 			document.getElementById('p2Score').value = '0';
 			document.getElementById('round').value = '';
-			document.getElementById('game').value = '';
+			setGameValue('');
 		}
 
 		var statusTimeoutId = null;
