@@ -25,6 +25,9 @@ jobs:
           - target: aarch64-apple-darwin
             os: macos-latest
             archive: tar.gz
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            archive: zip
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -43,12 +46,14 @@ jobs:
       - name: Build release binary
         run: cargo build --release --manifest-path server/Cargo.toml --target ${{ matrix.target }}
 
-      - name: Package release archive
+      - name: Package release archive (Unix)
+        if: runner.os != 'Windows'
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           NAME="fgc-scoreboard-${VERSION}-${{ matrix.target }}"
           mkdir -p "$NAME"
           cp "server/target/${{ matrix.target }}/release/fgc-server" "$NAME/fgc-server"
+          chmod +x "$NAME/fgc-server"
           cp -r web "$NAME/web"
           mkdir -p "$NAME/data"
           printf '%s\n' \
@@ -61,6 +66,27 @@ jobs:
             'Overlay:    http://<your-ip>:8080/overlay/scoreboard.html' \
             > "$NAME/README-LAN.txt"
           tar czf "${NAME}.${{ matrix.archive }}" "$NAME"
+
+      - name: Package release archive (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $Version = $env:GITHUB_REF_NAME -replace '^v', ''
+          $Name = "fgc-scoreboard-${Version}-${{ matrix.target }}"
+          New-Item -ItemType Directory -Force -Path $Name | Out-Null
+          Copy-Item "server/target/${{ matrix.target }}/release/fgc-server.exe" "$Name/fgc-server.exe"
+          Copy-Item -Recurse web "$Name/web"
+          New-Item -ItemType Directory -Force -Path "$Name/data" | Out-Null
+          @(
+            'FGC Scoreboard LAN release',
+            '',
+            'Run from this folder:',
+            '  .\fgc-server.exe',
+            '',
+            'Controller: http://<your-ip>:8080/',
+            'Overlay:    http://<your-ip>:8080/overlay/scoreboard.html'
+          ) | Set-Content "$Name/README-LAN.txt"
+          Compress-Archive -Path $Name -DestinationPath "${Name}.${{ matrix.archive }}"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -75,6 +101,15 @@ jobs:
         with:
           path: artifacts
 
+      - name: Generate checksums
+        run: |
+          cd artifacts
+          find . -type f \( -name '*.tar.gz' -o -name '*.zip' \) -print0 \
+            | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
+
       - uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/**/*
+          generate_release_notes: true
+          files: |
+            artifacts/**/*
+            artifacts/SHA256SUMS.txt

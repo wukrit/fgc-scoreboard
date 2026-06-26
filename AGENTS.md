@@ -138,6 +138,8 @@ Both `style.scss` and `style.css` are committed.
 
 **GitHub Pages:** `.github/workflows/pages.yml` deploys `web/`; `web/.nojekyll` disables Jekyll.
 
+**Binary releases:** `.github/workflows/release.yml` runs on `v*` tag push — builds `fgc-server` for Linux (x64/ARM64), macOS (x64/ARM64), and Windows x64, publishes archives to GitHub Releases with SHA256 checksums. `.github/workflows/server-build.yml` smoke-tests `cargo build --release` on PRs and `main`. To cut a release: `git tag -a v0.1.0 -m "v0.1.0"` then `git push origin v0.1.0` (keep `server/Cargo.toml` version in sync manually).
+
 ### LAN Mode (Tournament Use)
 
 ```bash

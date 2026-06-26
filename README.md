@@ -84,6 +84,24 @@ export FGC_AUTH_TOKEN="$(./server/target/release/fgc-server --generate-token)"
 FGC_AUTH_TOKEN="$FGC_AUTH_TOKEN" ./scripts/start.sh
 ```
 
+Windows: unpack the release `.zip`, then run `.\fgc-server.exe` from that folder.
+
+---
+
+### Cutting a release (maintainers)
+
+Binary releases are published to [GitHub Releases](https://github.com/wukrit/fgc-scoreboard/releases) when a `v*` tag is pushed. [`.github/workflows/release.yml`](.github/workflows/release.yml) builds `fgc-server` for Linux (x64/ARM64), macOS (x64/ARM64), and Windows x64, packages each with `web/` and `data/`, and attaches SHA256 checksums.
+
+1. Ensure `main` is green (GitHub Pages + Server Build workflows).
+2. Tag and push (version comes from the tag name):
+   ```bash
+   git tag -a v0.1.0 -m "v0.1.0"
+   git push origin v0.1.0
+   ```
+3. Confirm the **Release** workflow completes and the GitHub Release lists all platform archives plus `SHA256SUMS.txt`.
+
+Keep [server/Cargo.toml](server/Cargo.toml) `version` in sync with the tag manually when bumping versions.
+
 ---
 
 ### Tunnel Mode (Cloudflare Tunnel)
