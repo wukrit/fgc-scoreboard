@@ -786,7 +786,8 @@
 		}
 
 		function authHeaders(extra) {
-			var h = Object.assign({}, extra || {});
+			// Bypass loca.lt reminder page for fetch/poll (OBS overlay uses same header in scoreboard.js).
+			var h = Object.assign({ 'Bypass-Tunnel-Reminder': '1' }, extra || {});
 			var token = getAuthToken();
 			if (token) h['Authorization'] = 'Bearer ' + token;
 			return h;

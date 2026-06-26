@@ -191,6 +191,18 @@ async fn main() {
         std::process::exit(1);
     });
 
+    let server = tokio::spawn(async move {
+        axum::serve(
+            listener,
+            app.into_make_service_with_connect_info::<SocketAddr>(),
+        )
+        .with_graceful_shutdown(shutdown_signal())
+        .await
+    });
+
+    // Accept loop must be running before tunnel workers proxy to localhost.
+    tokio::task::yield_now().await;
+
     let tunnel = if config.tunnel_enabled() {
         let host = tunnel::normalize_tunnel_host(&config.tunnel_host).unwrap_or_else(|err| {
             eprintln!("{err}");
@@ -214,16 +226,17 @@ async fn main() {
         None
     };
 
-    axum::serve(
-        listener,
-        app.into_make_service_with_connect_info::<SocketAddr>(),
-    )
-    .with_graceful_shutdown(shutdown_signal())
-    .await
-    .unwrap_or_else(|e| {
-        eprintln!("Server error: {e}");
-        std::process::exit(1);
-    });
+    match server.await {
+        Ok(Ok(())) => {}
+        Ok(Err(e)) => {
+            eprintln!("Server error: {e}");
+            std::process::exit(1);
+        }
+        Err(e) => {
+            eprintln!("Server task failed: {e}");
+            std::process::exit(1);
+        }
+    }
 
     if let Some(handle) = tunnel {
         handle.shutdown().await;

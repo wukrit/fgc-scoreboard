@@ -1,6 +1,6 @@
 mod client;
 
-use client::{register_tunnel, spawn_tunnel_cluster, TunnelInfo};
+use client::{log_tunnel_target, register_tunnel, spawn_tunnel_cluster, TunnelInfo};
 use tokio::task::JoinHandle;
 
 pub use client::normalize_tunnel_host;
@@ -25,6 +25,7 @@ pub async fn start_tunnel(
     local_port: u16,
 ) -> Result<TunnelHandle, String> {
     let info = register_tunnel(&host, subdomain.as_deref()).await?;
+    log_tunnel_target(&info);
     log_tunnel_urls(&info);
 
     let (shutdown_tx, shutdown_rx) = tokio::sync::watch::channel(false);

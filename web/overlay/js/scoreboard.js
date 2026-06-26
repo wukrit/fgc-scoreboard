@@ -119,7 +119,11 @@ function init(){
 		function poll() {
 			if (abortCtrl) abortCtrl.abort();
 			abortCtrl = new AbortController();
-			fetch(url + '?v=' + Date.now(), { signal: abortCtrl.signal })
+			fetch(url + '?v=' + Date.now(), {
+				signal: abortCtrl.signal,
+				// Required for loca.lt tunnels in OBS/headless browsers (no consent cookie).
+				headers: { 'Bypass-Tunnel-Reminder': '1' }
+			})
 				.then(function(r) { return r.json(); })
 				.then(function(data) { callback(data); })
 				.catch(function(e) { /* ignore AbortError and network errors */ });
