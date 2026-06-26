@@ -18,7 +18,7 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler
 SCOREBOARD_FILE = 'scoreboard.json'
 MAX_BODY_SIZE = 65536  # 64KB — generous for scoreboard JSON
 ALLOWED_PREFIXES = ('/_overlays/', '/css/', '/fonts/', '/js/')
-ALLOWED_FILES = ('/controller.html', '/scoreboard.json', '/')
+ALLOWED_FILES = ('/controller.html', '/scoreboard.json')
 AUTH_REALM = 'FGC Scoreboard'
 RATE_LIMIT_WINDOW = 60  # seconds
 DEFAULT_DATA = {
@@ -133,6 +133,10 @@ class ScoreboardHandler(SimpleHTTPRequestHandler):
             self.send_header('Cache-Control', 'no-store')
             self.end_headers()
             self.wfile.write(data.encode())
+        elif path == '/':
+            query = self.path.split('?', 1)
+            self.path = '/controller.html' + ('?' + query[1] if len(query) > 1 else '')
+            super().do_GET()
         elif path in ALLOWED_FILES or any(path.startswith(p) for p in ALLOWED_PREFIXES):
             super().do_GET()
         else:
@@ -249,7 +253,7 @@ if __name__ == '__main__':
     else:
         print('  Auth:       disabled')
     print(f'  Data:       {SCOREBOARD_FILE} (ephemeral on redeploy when hosted)')
-    print(f'  Controller: http://{ip}:{port}/controller.html')
+    print(f'  Controller: http://{ip}:{port}/')
     print(f'  Overlay:    http://{ip}:{port}/_overlays/scoreboard.html')
     print(f'\nListening on {bind}:{port} (Ctrl+C to stop)')
     print('  Generate token: python3 server.py --generate-token\n')
