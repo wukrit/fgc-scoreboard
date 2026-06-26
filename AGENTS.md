@@ -48,7 +48,7 @@ LAN and tunnel have **no authentication by default** (set `FGC_AUTH_TOKEN` to en
 
 - **`README.md`** — End-user setup (LAN, tunnel, remote, customization, security)
 - **`controller.html`** — Mobile-friendly neo-brutalist web form for score entry. Pico CSS + custom overrides. Token gate + `authFetch()` for LAN/hosted auth. Hosted on GitHub Pages (remote mode) or served by `server.py` (LAN/hosted mode).
-- **`server.py`** — Zero-dependency Python 3 HTTP server. Serves static files + GET/POST `/scoreboard.json`, `GET /health`, `GET /auth/check`. Optional Bearer auth via `FGC_AUTH_TOKEN` env or `--token`. Reads `PORT` env (Railway). Run with `python3 server.py [--port PORT] [--generate-token]`.
+- **`server.py`** — Zero-dependency Python 3 HTTP server. Serves static files + GET/POST `/scoreboard.json`, `GET /health`, `GET /auth/check`. Optional Bearer auth via `FGC_AUTH_TOKEN` env or `--token`. Reads `PORT` env (Railway). Logs to stdout via stdlib `logging` (JSON on Railway when `RAILWAY_ENVIRONMENT` is set; plain text locally). Env: `FGC_LOG_LEVEL` (default `INFO`), `FGC_LOG_POLL=1` (log poll GETs at INFO), `FGC_LOG_JSON=1|0` (force format). Run with `python3 server.py [--port PORT] [--generate-token]`.
 - **`start-tunnel.sh`** — Cloudflare Tunnel launcher (runs `server.py` + `cloudflared tunnel`)
 - **`.railway/railway.ts`** — Railway Infrastructure as Code (service, healthcheck, env vars). Do not add `railway.toml` for the same service
 - **`package.json`** — `railway` SDK devDependency for IaC authoring only (not a runtime dep)

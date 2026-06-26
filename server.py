@@ -4,6 +4,7 @@
 import argparse
 import hmac
 import json
+import logging
 import os
 import re
 import secrets
@@ -13,7 +14,18 @@ import sys
 import tempfile
 import time
 from collections import defaultdict
+from http import HTTPStatus
 from http.server import HTTPServer, SimpleHTTPRequestHandler
+
+logger = logging.getLogger('fgc-scoreboard')
+
+LEVEL_NAMES = {
+    logging.DEBUG: 'debug',
+    logging.INFO: 'info',
+    logging.WARNING: 'warn',
+    logging.ERROR: 'error',
+    logging.CRITICAL: 'error',
+}
 
 SCOREBOARD_FILE = 'scoreboard.json'
 MAX_BODY_SIZE = 65536  # 64KB — generous for scoreboard JSON
@@ -60,11 +72,97 @@ def get_lan_ip():
         return '127.0.0.1'
 
 
+def env_truthy(name):
+    return os.environ.get(name, '').strip().lower() in ('1', 'true', 'yes')
+
+
+def use_json_logs():
+    override = os.environ.get('FGC_LOG_JSON', '').strip().lower()
+    if override in ('1', 'true', 'yes'):
+        return True
+    if override in ('0', 'false', 'no'):
+        return False
+    return bool(os.environ.get('RAILWAY_ENVIRONMENT'))
+
+
+class FgcJsonFormatter(logging.Formatter):
+    def format(self, record):
+        payload = {
+            'message': record.getMessage(),
+            'level': LEVEL_NAMES.get(record.levelno, 'info'),
+        }
+        for key in ('client', 'method', 'path', 'status'):
+            if hasattr(record, key):
+                val = getattr(record, key)
+                if val is not None:
+                    payload[key] = val
+        return json.dumps(payload, ensure_ascii=False)
+
+
+class FgcPlainFormatter(logging.Formatter):
+    def __init__(self):
+        super().__init__(datefmt='%d/%b/%Y %H:%M:%S')
+
+    def format(self, record):
+        if getattr(record, 'access', False):
+            return (
+                f'{record.client} - - [{self.formatTime(record, self.datefmt)}] '
+                f'"{record.requestline}" {record.status} -'
+            )
+        return super().format(record)
+
+
+def configure_logging():
+    level_name = os.environ.get('FGC_LOG_LEVEL', 'INFO').upper()
+    level = getattr(logging, level_name, logging.INFO)
+
+    handler = logging.StreamHandler(sys.stdout)
+    if use_json_logs():
+        handler.setFormatter(FgcJsonFormatter())
+    else:
+        handler.setFormatter(FgcPlainFormatter())
+
+    root = logging.getLogger()
+    root.handlers.clear()
+    root.addHandler(handler)
+    root.setLevel(level)
+    logger.setLevel(level)
+
+
+def access_log_level(method, path, status, log_poll):
+    scoreboard_path = '/' + SCOREBOARD_FILE
+    is_poll = method == 'GET' and path in ('/health', scoreboard_path)
+    is_post_save = method == 'POST' and path == scoreboard_path
+    is_static = (
+        method == 'GET'
+        and not is_poll
+        and (
+            path in ALLOWED_FILES
+            or any(path.startswith(p) for p in ALLOWED_PREFIXES)
+            or path == '/'
+        )
+    )
+
+    if status >= 500:
+        return logging.ERROR
+    if status >= 400:
+        return logging.WARNING
+    if is_post_save:
+        return logging.INFO
+    if is_poll:
+        return logging.INFO if log_poll else logging.DEBUG
+    if is_static:
+        return logging.DEBUG
+    return logging.DEBUG
+
+
 class ScoreboardHTTPServer(HTTPServer):
-    def __init__(self, *args, auth_token=None, rate_limit=60, trust_proxy=False, **kwargs):
+    def __init__(self, *args, auth_token=None, rate_limit=60, trust_proxy=False,
+                 log_poll=False, **kwargs):
         self.auth_token = auth_token
         self.rate_limit = rate_limit
         self.trust_proxy = trust_proxy
+        self.log_poll = log_poll
         self.post_history = defaultdict(list)
         super().__init__(*args, **kwargs)
 
@@ -196,6 +294,7 @@ class ScoreboardHandler(SimpleHTTPRequestHandler):
         try:
             os.replace(tmp, SCOREBOARD_FILE)
         except Exception:
+            logger.exception('Failed to write %s', SCOREBOARD_FILE)
             os.unlink(tmp)
             self.send_response(500)
             self.end_headers()
@@ -211,9 +310,35 @@ class ScoreboardHandler(SimpleHTTPRequestHandler):
         except BrokenPipeError:
             pass
 
-    def log_message(self, format, *args):
-        if 'POST' in str(args):
-            super().log_message(format, *args)
+    def log_request(self, code='-', size='-'):
+        if isinstance(code, HTTPStatus):
+            code = code.value
+        try:
+            status = int(code)
+        except (TypeError, ValueError):
+            status = 0
+
+        path = self.path.split('?')[0]
+        method = self.command
+        level = access_log_level(method, path, status, self.server.log_poll)
+        if not logger.isEnabledFor(level):
+            return
+
+        logger.log(
+            level,
+            '%s %s %s',
+            method,
+            path,
+            status,
+            extra={
+                'access': True,
+                'client': self.address_string(),
+                'method': method,
+                'path': path,
+                'status': status,
+                'requestline': self.requestline,
+            },
+        )
 
 
 if __name__ == '__main__':
@@ -232,12 +357,15 @@ if __name__ == '__main__':
         print(generate_token())
         sys.exit(0)
 
+    configure_logging()
+
     auth_token = args.token or os.environ.get('FGC_AUTH_TOKEN') or None
     if auth_token is not None and len(auth_token) < 32:
-        print('Error: auth token must be at least 32 characters', file=sys.stderr)
+        logger.error('Auth token must be at least 32 characters')
         sys.exit(1)
 
     rate_limit = int(os.environ.get('FGC_RATE_LIMIT', '60'))
+    log_poll = env_truthy('FGC_LOG_POLL')
     port = int(os.environ.get('PORT', args.port))
     bind = os.environ.get('FGC_BIND', args.bind)
 
@@ -247,16 +375,16 @@ if __name__ == '__main__':
 
     ip = get_lan_ip()
 
-    print('\nFGC Scoreboard Server')
+    logger.info('FGC Scoreboard Server')
     if auth_token:
-        print('  Auth:       enabled (token from FGC_AUTH_TOKEN or --token)')
+        logger.info('  Auth:       enabled (token from FGC_AUTH_TOKEN or --token)')
     else:
-        print('  Auth:       disabled')
-    print(f'  Data:       {SCOREBOARD_FILE} (ephemeral on redeploy when hosted)')
-    print(f'  Controller: http://{ip}:{port}/')
-    print(f'  Overlay:    http://{ip}:{port}/_overlays/scoreboard.html')
-    print(f'\nListening on {bind}:{port} (Ctrl+C to stop)')
-    print('  Generate token: python3 server.py --generate-token\n')
+        logger.info('  Auth:       disabled')
+    logger.info('  Data:       %s (ephemeral on redeploy when hosted)', SCOREBOARD_FILE)
+    logger.info('  Controller: http://%s:%s/', ip, port)
+    logger.info('  Overlay:    http://%s:%s/_overlays/scoreboard.html', ip, port)
+    logger.info('Listening on %s:%s (Ctrl+C to stop)', bind, port)
+    logger.info('  Generate token: python3 server.py --generate-token')
 
     ScoreboardHTTPServer.allow_reuse_address = True
     server = ScoreboardHTTPServer(
@@ -265,6 +393,7 @@ if __name__ == '__main__':
         auth_token=auth_token,
         rate_limit=rate_limit,
         trust_proxy=args.trust_proxy,
+        log_poll=log_poll,
     )
 
     def handle_signal(sig, frame):
@@ -278,4 +407,4 @@ if __name__ == '__main__':
         pass
     finally:
         server.server_close()
-        print('\nServer stopped.')
+        logger.info('Server stopped.')

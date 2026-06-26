@@ -105,6 +105,18 @@ Optional one-time QR/link: `controller.html?token=...` (token is stripped from t
 
 Rotate the token between events: update `FGC_AUTH_TOKEN` in Railway Variables and redeploy.
 
+## Logging
+
+The server emits structured JSON logs on Railway (`RAILWAY_ENVIRONMENT` is set automatically). POST saves log at `info`; poll traffic (`GET /scoreboard.json`, `GET /health`) is `debug` by default to keep logs quiet.
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `FGC_LOG_LEVEL` | `INFO` | Root log level (`DEBUG`, `INFO`, …) |
+| `FGC_LOG_POLL` | off | Set to `1` to log poll GETs at INFO (sync debugging) |
+| `FGC_LOG_JSON` | auto | `1` or `0` to force JSON or plain text |
+
+In the Railway log explorer, `@level:error` reflects real failures (5xx, startup errors), not routine POST 200s.
+
 ## Local auth testing
 
 ```bash
@@ -129,5 +141,7 @@ Exit `0` = no pending infra changes; exit `2` = drift detected.
 |-------|-----|
 | Healthcheck fails | Ensure `GET /health` returns 200; check deploy logs |
 | 401 on save | Token mismatch; re-enter on controller or update Railway Variable |
+| POST 200s show as errors | Fixed in current `server.py` — logs go to stdout with structured JSON on Railway; redeploy if on an older build |
+| Debug overlay/controller sync | Set `FGC_LOG_POLL=1` on the service to log `GET /scoreboard.json` and `GET /health` at INFO; remove when done |
 | IaC plan blocked | Remove `railway.toml` if present — cannot mix with `.railway/railway.ts` |
 | Scores gone after deploy | Expected — scores are ephemeral on Railway without a Volume |
