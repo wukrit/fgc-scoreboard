@@ -32,7 +32,7 @@ Never commit `FGC_AUTH_TOKEN`. Apply infra first (`railway config apply`), then 
 the token on the service:
 
 ```bash
-railway variables set FGC_AUTH_TOKEN="$(python3 server.py --generate-token)" -s fgc-scoreboard
+railway variables set FGC_AUTH_TOKEN="$(./server/target/release/fgc-server --generate-token)" -s fgc-scoreboard
 ```
 
 The IaC file uses `module.exports = project(...)` (not `export default`) because tsx
