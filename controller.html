@@ -842,6 +842,32 @@
 			warning.style.display = 'block';
 		}
 
+		var lastSyncedTimestamp = '';
+		var initialSyncDone = false;
+
+		function isFieldFocused(id) {
+			var el = document.activeElement;
+			return el && el.id === id;
+		}
+
+		function isGameFocused() {
+			var el = document.activeElement;
+			if (!el) return false;
+			var id = el.id;
+			return id === 'game-select' || id === 'game-custom' || id === 'game-mode-toggle';
+		}
+
+		function applyField(id, value, defaultVal) {
+			if (isFieldFocused(id)) return false;
+			var el = document.getElementById(id);
+			var strVal = value !== undefined && value !== '' ? value : (defaultVal !== undefined ? defaultVal : '');
+			if (el.value !== strVal) {
+				el.value = strVal;
+				return true;
+			}
+			return false;
+		}
+
 		function populateForm(data) {
 			document.getElementById('p1Name').value = data.p1Name || '';
 			document.getElementById('p1Team').value = data.p1Team || '';
@@ -851,58 +877,93 @@
 			document.getElementById('p2Score').value = data.p2Score || '0';
 			document.getElementById('round').value = data.round || '';
 			setGameValue(data.game || '');
+			lastSyncedTimestamp = data.timestamp || '';
 		}
 
-		function loadLanData() {
-			showStatus('Loading...', 'loading');
-			authFetch(window.location.origin + '/scoreboard.json')
-				.then(function(r) { return r.json(); })
-				.then(function(data) {
-					if (data.p1Name !== undefined) populateForm(data);
-					showStatus('Loaded', 'ok');
-				})
-				.catch(function() {
-					showStatus('Could not load data from server', 'err');
+		function applyRemoteData(data) {
+			if (data.p1Name === undefined) return;
+			if (isSaving) return;
+			if (data.timestamp === lastSyncedTimestamp) return;
+
+			var changed = false;
+			changed = applyField('p1Name', data.p1Name) || changed;
+			changed = applyField('p1Team', data.p1Team) || changed;
+			changed = applyField('p1Score', data.p1Score, '0') || changed;
+			changed = applyField('p2Name', data.p2Name) || changed;
+			changed = applyField('p2Team', data.p2Team) || changed;
+			changed = applyField('p2Score', data.p2Score, '0') || changed;
+			changed = applyField('round', data.round) || changed;
+			if (!isGameFocused()) {
+				var gameVal = data.game || '';
+				if (getGameValue() !== gameVal) {
+					setGameValue(gameVal);
+					changed = true;
+				}
+			}
+
+			lastSyncedTimestamp = data.timestamp || '';
+
+			if (changed) {
+				var statusEl = document.getElementById('status');
+				if (statusEl.className !== 'status-loading') {
+					showStatus(initialSyncDone ? 'Synced' : 'Loaded', 'ok');
+					initialSyncDone = true;
+				}
+			}
+		}
+
+		function createPoller(url, fetchFn, callback) {
+			var abortCtrl = null;
+			function poll() {
+				if (abortCtrl) abortCtrl.abort();
+				abortCtrl = new AbortController();
+				fetchFn(url + '?v=' + Date.now(), { signal: abortCtrl.signal })
+					.then(function(r) { return r.json(); })
+					.then(callback)
+					.catch(function() { /* silent retry next tick */ });
+			}
+			poll();
+			setInterval(poll, 1000);
+		}
+
+		function startSync() {
+			if (apiUrl) {
+				showStatus('Loading...', 'loading');
+				createPoller(apiUrl, fetch, applyRemoteData);
+			} else if (lanMode) {
+				createPoller(window.location.origin + '/scoreboard.json', authFetch, applyRemoteData);
+			} else {
+				window.addEventListener('storage', function(evt) {
+					if (evt.key === 'fgc-scoreboard-data' && evt.newValue) {
+						try { applyRemoteData(JSON.parse(evt.newValue)); } catch(e) {}
+					}
 				});
+			}
 		}
 
 		function initAuthGate() {
 			authFetch(window.location.origin + '/scoreboard.json')
 				.then(function(r) {
 					authRequired = r.headers.get('X-FGC-Auth-Required') === '1';
-					if (!authRequired) {
-						return r.json().then(function(data) {
-							if (data.p1Name !== undefined) populateForm(data);
-							showStatus('Loaded', 'ok');
-						});
+					startSync();
+					if (authRequired) {
+						if (getAuthToken()) {
+							return verifyToken().then(function(ok) {
+								if (!ok) showStatus('Enter token to continue', 'err');
+							});
+						}
+						showAuthGate();
+						showStatus('Enter token to continue', 'err');
 					}
-					showStatus('Loading...', 'loading');
-					if (getAuthToken()) {
-						return verifyToken().then(function(ok) {
-							if (ok) loadLanData();
-							else showStatus('Enter token to continue', 'err');
-						});
-					}
-					showAuthGate();
-					showStatus('Enter token to continue', 'err');
 				})
 				.catch(function() {
 					showStatus('Could not load data from server', 'err');
+					startSync();
 				});
 		}
 
-		// Load current state on page load
 		if (apiUrl) {
-			showStatus('Loading...', 'loading');
-			fetch(apiUrl)
-				.then(function(r) { return r.json(); })
-				.then(function(data) {
-					if (data.p1Name !== undefined) populateForm(data);
-					showStatus('Loaded', 'ok');
-				})
-				.catch(function() {
-					showStatus('Could not load data from bin', 'err');
-				});
+			startSync();
 		} else if (lanMode) {
 			initAuthGate();
 		} else {
@@ -910,10 +971,12 @@
 			if (stored) {
 				try {
 					populateForm(JSON.parse(stored));
+					initialSyncDone = true;
 				} catch(e) {
 					console.warn('Failed to parse localStorage data:', e);
 				}
 			}
+			startSync();
 		}
 
 		function normalizeScore(id) {
@@ -975,6 +1038,7 @@
 			if (localMode) {
 				try {
 					localStorage.setItem('fgc-scoreboard-data', JSON.stringify(formData));
+					lastSyncedTimestamp = formData.timestamp;
 					showStatus('Saved (local)', 'ok');
 				} catch(e) {
 					showStatus('Save failed: ' + e.message, 'err');
@@ -999,6 +1063,7 @@
 					throw new Error('auth');
 				}
 				if (!r.ok) throw new Error('HTTP ' + r.status);
+				lastSyncedTimestamp = formData.timestamp;
 				showStatus(lanMode ? 'Saved (LAN)' : 'Saved', 'ok');
 			})
 			.catch(function(e) {
