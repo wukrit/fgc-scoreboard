@@ -7,3 +7,9 @@ data/scoreboard.json.tmp
 node_modules/
 server/target/
 docs/plans/
+
+# GPG private key material — never commit (use GitHub Actions secrets only)
+*PRIVATE KEY*
+*.sec.asc
+/private-keys/
+docs/*.sec.asc

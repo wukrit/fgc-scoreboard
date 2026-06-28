@@ -55,7 +55,7 @@ Optional one-time link for operators: `/?token=YOUR_TOKEN` (token is stripped fr
 
 ### LAN Mode (No Internet Required)
 
-Best for in-person tournaments. Download a [release archive](https://github.com/wukrit/fgc-scoreboard/releases) (includes `fgc-server` + `web/`) or build from source with Rust.
+Best for in-person tournaments. Download a [release archive](https://github.com/wukrit/fgc-scoreboard/releases) (includes `fgc-server` + `web/`) or build from source with Rust. See [Verifying downloads](#verifying-downloads) to check release integrity with GPG.
 
 1. From the project directory (or unpacked release folder):
    ```
@@ -91,7 +91,7 @@ Windows: unpack the release `.zip`, then run `.\fgc-server.exe` (or `.\fgc-serve
 
 ### Cutting a release (maintainers)
 
-Binary releases are published to [GitHub Releases](https://github.com/wukrit/fgc-scoreboard/releases) when a `v*` tag is pushed. [`.github/workflows/release.yml`](.github/workflows/release.yml) builds `fgc-server` for Linux (x64/ARM64), macOS (x64/ARM64), and Windows x64, packages each with `web/` and `data/`, and attaches SHA256 checksums.
+Binary releases are published to [GitHub Releases](https://github.com/wukrit/fgc-scoreboard/releases) when a `v*` tag is pushed. [`.github/workflows/release.yml`](.github/workflows/release.yml) builds `fgc-server` for Linux (x64/ARM64), macOS (x64/ARM64), and Windows x64, packages each with `web/` and `data/`, and attaches SHA256 checksums (GPG-signed when repo secrets are configured — see [docs/signing.md](docs/signing.md)).
 
 1. Ensure `main` is green (GitHub Pages + Server Build workflows).
 2. Tag and push (version comes from the tag name):
@@ -99,7 +99,9 @@ Binary releases are published to [GitHub Releases](https://github.com/wukrit/fgc
    git tag -a v0.1.0 -m "v0.1.0"
    git push origin v0.1.0
    ```
-3. Confirm the **Release** workflow completes and the GitHub Release lists all platform archives plus `SHA256SUMS.txt`.
+3. Confirm the **Release** workflow completes and the GitHub Release lists all platform archives plus `SHA256SUMS.txt` and `SHA256SUMS.txt.asc`.
+
+**First-time signing setup:** run `./scripts/setup-release-signing.sh` once (writes public key to `docs/release-signing.pub.asc`, private key to GitHub secrets only), commit the `.pub.asc` file, then tag.
 
 Keep [server/Cargo.toml](server/Cargo.toml) `version` in sync with the tag manually when bumping versions.
 
@@ -256,6 +258,40 @@ Three sync modes, auto-detected by priority:
 All scoreboard fields are strings in JSON (`p1Name`, `p1Team`, `p1Score`, `p2Name`, `p2Team`, `p2Score`, `round`, `game`, `timestamp`). The controller sets `timestamp` on every save so multiple controllers can detect changes.
 
 **Hosted (Railway):** See [deploy/railway.md](deploy/railway.md). Infrastructure as code in `.railway/railway.ts`. POST rate limiting defaults to 60 requests/minute per IP (`FGC_RATE_LIMIT`).
+
+---
+
+## Verifying downloads
+
+Releases include `SHA256SUMS.txt` covering every platform archive. When GPG signing is enabled, `SHA256SUMS.txt.asc` is also attached.
+
+1. Import the maintainer **public** key (safe to store in this public repo):
+
+   ```bash
+   gpg --import docs/release-signing.pub.asc
+   ```
+
+2. Verify the checksum signature (optional if no `.asc` file yet):
+
+   ```bash
+   gpg --verify SHA256SUMS.txt.asc SHA256SUMS.txt
+   ```
+
+3. Confirm archive hashes from the directory where you downloaded the files:
+
+   ```bash
+   sha256sum -c SHA256SUMS.txt          # Linux
+   shasum -a 256 -c SHA256SUMS.txt      # macOS
+   ```
+
+   On Windows, compare `Get-FileHash` output to the matching line in `SHA256SUMS.txt`.
+
+GPG proves the checksum file is authentic. It does **not** remove OS warnings when running unsigned binaries:
+
+- **macOS:** Right-click `fgc-server` → Open, or run `xattr -d com.apple.quarantine ./fgc-server` after verifying.
+- **Windows:** Click "More info" → Run anyway after verifying.
+
+Full maintainer setup: [docs/signing.md](docs/signing.md).
 
 ---
 

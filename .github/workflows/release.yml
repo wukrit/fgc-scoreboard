@@ -101,15 +101,29 @@ jobs:
         with:
           path: artifacts
 
-      - name: Generate checksums
+      - name: Generate and sign checksums
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           cd artifacts
           find . -type f \( -name '*.tar.gz' -o -name '*.zip' \) -print0 \
-            | sort -z | xargs -0 sha256sum > SHA256SUMS.txt
+            | sort -z | while IFS= read -r -d '' f; do
+              sha256sum "$f" | awk -v base="$(basename "$f")" '{print $1 "  " base}'
+            done > SHA256SUMS.txt
+
+          if [ -n "$GPG_PRIVATE_KEY" ]; then
+            gpg --batch --import <<< "$GPG_PRIVATE_KEY"
+            echo "$GPG_PASSPHRASE" | gpg --batch --yes --passphrase-fd 0 \
+              --pinentry-mode loopback \
+              --detach-sign --armor -o SHA256SUMS.txt.asc SHA256SUMS.txt
+          fi
 
       - uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
+          fail_on_unmatched_files: false
           files: |
             artifacts/**/*
             artifacts/SHA256SUMS.txt
+            artifacts/SHA256SUMS.txt.asc
