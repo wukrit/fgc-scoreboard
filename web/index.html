@@ -372,6 +372,245 @@
 			font-size: 13px;
 		}
 
+		/* --- Optional Counters --- */
+		.counters-section {
+			margin-top: 8px;
+			border: 3px solid #444;
+			box-shadow: 3px 3px 0 #000;
+			background: #1a1a1a;
+			padding: 0;
+		}
+
+		.counters-section > summary {
+			cursor: pointer;
+			font-size: 13px;
+			font-weight: 700;
+			text-transform: uppercase;
+			letter-spacing: 0.08em;
+			color: #bbb;
+			padding: 14px 16px;
+			list-style: none;
+			user-select: none;
+			touch-action: manipulation;
+		}
+
+		.counters-section > summary::-webkit-details-marker {
+			display: none;
+		}
+
+		.counters-section > summary::before {
+			content: '+ ';
+			font-weight: 900;
+			color: #888;
+		}
+
+		.counters-section[open] > summary::before {
+			content: '− ';
+		}
+
+		.counters-section > summary:focus-visible {
+			outline: 3px solid #888;
+			outline-offset: -3px;
+		}
+
+		.counters-inner {
+			padding: 0 16px 16px;
+			border-top: 3px solid #333;
+		}
+
+		.counters-list {
+			display: flex;
+			flex-direction: column;
+			gap: 10px;
+			margin-bottom: 12px;
+		}
+
+		.counter-row {
+			display: flex;
+			flex-direction: column;
+			gap: 12px;
+			padding: 12px;
+			background: #222;
+			border: 3px solid #555;
+			box-shadow: 2px 2px 0 #000;
+		}
+
+		.counter-label-field {
+			width: 100%;
+			min-width: 0;
+		}
+
+		.counter-label-field label {
+			display: block;
+			font-size: 11px;
+			font-weight: 700;
+			text-transform: uppercase;
+			letter-spacing: 0.06em;
+			color: #888;
+			margin-bottom: 4px;
+		}
+
+		.counter-label-field input {
+			width: 100%;
+			background: #111;
+			border: 3px solid #444;
+			box-shadow: 2px 2px 0 #000;
+			color: #eee;
+			padding: 10px;
+			font-size: 15px;
+			min-height: 44px;
+		}
+
+		.counter-row-actions {
+			display: flex;
+			align-items: flex-end;
+			justify-content: space-between;
+			gap: 12px;
+			width: 100%;
+		}
+
+		.counter-stepper-wrap {
+			flex: 1 1 auto;
+			min-width: 0;
+			max-width: 280px;
+			display: flex;
+			flex-direction: column;
+			gap: 4px;
+		}
+
+		.counter-stepper-wrap .stepper-label {
+			font-size: 11px;
+			font-weight: 700;
+			text-transform: uppercase;
+			letter-spacing: 0.06em;
+			color: #888;
+		}
+
+		.counter-stepper {
+			display: grid;
+			grid-template-columns: 52px minmax(64px, 1fr) 52px;
+			width: 100%;
+			min-width: 0;
+			align-items: stretch;
+		}
+
+		.counter-stepper .counter-btn {
+			margin: 0;
+			padding: 0;
+			width: 100%;
+			min-width: 0;
+			min-height: 48px;
+			font-size: 22px;
+			font-weight: 900;
+			line-height: 1;
+			border: 3px solid #000;
+			box-shadow: none;
+			background: #444;
+			color: #fff;
+			cursor: pointer;
+			box-sizing: border-box;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			text-transform: none;
+			letter-spacing: 0;
+			touch-action: manipulation;
+			user-select: none;
+			-webkit-tap-highlight-color: transparent;
+		}
+
+		.counter-stepper .counter-btn:first-child {
+			border-right: none;
+		}
+
+		.counter-stepper .counter-btn:last-child {
+			border-left: none;
+		}
+
+		.counter-stepper .counter-value {
+			margin: 0;
+			padding: 0;
+			width: 100%;
+			min-width: 0;
+			min-height: 48px;
+			font-size: 1.5rem;
+			font-weight: 900;
+			font-variant-numeric: tabular-nums;
+			text-align: center;
+			line-height: 1;
+			background: #333;
+			border: 3px solid #000;
+			border-radius: 0;
+			box-shadow: none;
+			color: #fff;
+			cursor: text;
+			box-sizing: border-box;
+			-webkit-appearance: none;
+			appearance: none;
+		}
+
+		.counter-stepper .counter-value:focus-visible,
+		.counter-stepper .counter-btn:focus-visible {
+			outline: 3px solid #888;
+			outline-offset: -3px;
+		}
+
+		@media (prefers-reduced-motion: no-preference) {
+			.counter-stepper .counter-btn:active {
+				transform: translate(2px, 2px);
+			}
+		}
+
+		.counter-remove {
+			flex: 0 0 auto;
+			background: #2a2a2a;
+			border: 3px solid #555;
+			box-shadow: 2px 2px 0 #000;
+			color: #aaa;
+			font-size: 12px;
+			font-weight: 700;
+			text-transform: uppercase;
+			padding: 10px 14px;
+			min-height: 48px;
+			white-space: nowrap;
+			cursor: pointer;
+			touch-action: manipulation;
+		}
+
+		.counter-remove:focus-visible,
+		.counter-label-field input:focus-visible,
+		.btn-add-counter:focus-visible {
+			outline: 3px solid #888;
+			outline-offset: 2px;
+		}
+
+		.btn-add-counter {
+			width: 100%;
+			background: #333;
+			border: 3px solid #555;
+			box-shadow: 3px 3px 0 #000;
+			color: #ccc;
+			font-size: 13px;
+			font-weight: 700;
+			text-transform: uppercase;
+			letter-spacing: 0.08em;
+			padding: 12px;
+			min-height: var(--touch-min);
+			cursor: pointer;
+			touch-action: manipulation;
+		}
+
+		.btn-add-counter:disabled {
+			opacity: 0.45;
+			cursor: not-allowed;
+		}
+
+		.counters-empty-hint {
+			font-size: 12px;
+			color: var(--text-muted);
+			margin: 0 0 10px;
+		}
+
 		/* Sticky primary actions on mobile */
 		.actions-primary {
 			margin-bottom: 0;
@@ -663,6 +902,15 @@
 				</fieldset>
 			</section>
 
+			<details class="counters-section">
+				<summary>Additional Counters (optional)</summary>
+				<div class="counters-inner">
+					<p class="counters-empty-hint" id="counters-hint">Add custom counters for a separate OBS overlay at <code>/overlay/counters.html</code>.</p>
+					<div id="counters-list" class="counters-list" role="list"></div>
+					<button type="button" class="btn-add-counter" id="btn-add-counter" onclick="addCounter()">Add Counter</button>
+				</div>
+			</details>
+
 			<div class="actions-wrap">
 				<div class="button-row actions-secondary" role="group" aria-label="Secondary match actions">
 					<button type="button" class="btn-reset" onclick="resetScores()">Reset Scores</button>
@@ -860,6 +1108,184 @@
 
 		var lastSyncedTimestamp = '';
 		var initialSyncDone = false;
+		var MAX_COUNTERS = 8;
+
+		function generateCounterId() {
+			var chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+			var id = '';
+			for (var i = 0; i < 6; i++) {
+				id += chars.charAt(Math.floor(Math.random() * chars.length));
+			}
+			return id;
+		}
+
+		function isCounterFieldFocused(id) {
+			var el = document.activeElement;
+			if (!el) return false;
+			return el.id === 'counter-label-' + id || el.id === 'counter-value-' + id;
+		}
+
+		function updateAddCounterButton() {
+			var btn = document.getElementById('btn-add-counter');
+			var count = document.querySelectorAll('#counters-list .counter-row').length;
+			btn.disabled = count >= MAX_COUNTERS;
+		}
+
+		function buildCounterRow(id, label, value) {
+			var row = document.createElement('div');
+			row.className = 'counter-row';
+			row.setAttribute('role', 'listitem');
+			row.setAttribute('data-counter-id', id);
+			row.innerHTML =
+				'<div class="counter-label-field">' +
+					'<label for="counter-label-' + id + '">Label</label>' +
+					'<input type="text" id="counter-label-' + id + '" value="' + escapeAttr(label || '') + '" maxlength="64" placeholder="e.g. Stock" autocomplete="off" onblur="save()">' +
+				'</div>' +
+				'<div class="counter-row-actions">' +
+					'<div class="counter-stepper-wrap">' +
+						'<span class="stepper-label">Value</span>' +
+						'<div class="counter-stepper" role="group" aria-label="' + escapeAttr(label || 'Counter') + ' value">' +
+							'<button type="button" class="counter-btn" onclick="adjustCounter(\'' + id + '\', -1)" aria-label="Decrease ' + escapeAttr(label || 'counter') + '">&minus;</button>' +
+							'<input type="text" id="counter-value-' + id + '" value="' + escapeAttr(value || '0') + '" class="counter-value" inputmode="numeric" pattern="[0-9]*" maxlength="2" aria-label="' + escapeAttr(label || 'Counter') + ' value" onblur="commitCounter(\'' + id + '\')" oninput="filterCounterInput(\'' + id + '\')" onkeydown="handleCounterKeydown(event, \'' + id + '\')">' +
+							'<button type="button" class="counter-btn" onclick="adjustCounter(\'' + id + '\', 1)" aria-label="Increase ' + escapeAttr(label || 'counter') + '">+</button>' +
+						'</div>' +
+					'</div>' +
+					'<button type="button" class="counter-remove" onclick="removeCounter(\'' + id + '\')" aria-label="Remove counter">Remove</button>' +
+				'</div>';
+			return row;
+		}
+
+		function escapeAttr(str) {
+			return String(str)
+				.replace(/&/g, '&amp;')
+				.replace(/"/g, '&quot;')
+				.replace(/</g, '&lt;')
+				.replace(/>/g, '&gt;');
+		}
+
+		function renderCounters(data) {
+			var list = document.getElementById('counters-list');
+			var counters = (data && data.counters && typeof data.counters === 'object') ? data.counters : {};
+			var ids = Object.keys(counters);
+			list.innerHTML = '';
+			ids.forEach(function(id) {
+				var c = counters[id] || {};
+				list.appendChild(buildCounterRow(id, c.label || '', c.value || '0'));
+			});
+			updateAddCounterButton();
+		}
+
+		function getCountersData() {
+			var counters = {};
+			var rows = document.querySelectorAll('#counters-list .counter-row');
+			rows.forEach(function(row) {
+				var id = row.getAttribute('data-counter-id');
+				var labelEl = document.getElementById('counter-label-' + id);
+				var valueEl = document.getElementById('counter-value-' + id);
+				if (!labelEl || !valueEl) return;
+				var raw = parseInt(valueEl.value, 10) || 0;
+				counters[id] = {
+					label: labelEl.value,
+					value: String(Math.max(0, Math.min(99, raw)))
+				};
+			});
+			return counters;
+		}
+
+		function addCounter() {
+			var rows = document.querySelectorAll('#counters-list .counter-row');
+			if (rows.length >= MAX_COUNTERS) return;
+			var id = generateCounterId();
+			while (document.querySelector('[data-counter-id="' + id + '"]')) {
+				id = generateCounterId();
+			}
+			document.getElementById('counters-list').appendChild(buildCounterRow(id, '', '0'));
+			updateAddCounterButton();
+			document.getElementById('counter-label-' + id).focus();
+			save();
+		}
+
+		function removeCounter(id) {
+			var row = document.querySelector('[data-counter-id="' + id + '"]');
+			if (row) row.remove();
+			updateAddCounterButton();
+			save();
+		}
+
+		function normalizeCounter(id) {
+			var input = document.getElementById('counter-value-' + id);
+			if (!input) return 0;
+			var val = parseInt(input.value, 10);
+			if (isNaN(val)) val = 0;
+			val = Math.max(0, Math.min(99, val));
+			input.value = String(val);
+			return val;
+		}
+
+		function commitCounter(id) {
+			normalizeCounter(id);
+			save();
+		}
+
+		function filterCounterInput(id) {
+			var input = document.getElementById('counter-value-' + id);
+			if (!input) return;
+			var digits = input.value.replace(/\D/g, '');
+			if (digits !== input.value) input.value = digits;
+		}
+
+		function handleCounterKeydown(e, id) {
+			if (e.key === 'Enter') {
+				e.preventDefault();
+				document.getElementById('counter-value-' + id).blur();
+			}
+		}
+
+		function adjustCounter(id, delta) {
+			var input = document.getElementById('counter-value-' + id);
+			if (!input) return;
+			var val = parseInt(input.value, 10) || 0;
+			input.value = String(val + delta);
+			normalizeCounter(id);
+			save();
+		}
+
+		function getCounterIdsFromDom() {
+			var ids = [];
+			document.querySelectorAll('#counters-list .counter-row').forEach(function(row) {
+				ids.push(row.getAttribute('data-counter-id'));
+			});
+			return ids;
+		}
+
+		function applyCountersRemote(counters) {
+			counters = counters && typeof counters === 'object' ? counters : {};
+			var remoteIds = Object.keys(counters).sort().join(',');
+			var localIds = getCounterIdsFromDom().sort().join(',');
+			if (remoteIds !== localIds) {
+				renderCounters({ counters: counters });
+				return true;
+			}
+			var changed = false;
+			Object.keys(counters).forEach(function(id) {
+				var c = counters[id] || {};
+				if (!isCounterFieldFocused(id)) {
+					var labelEl = document.getElementById('counter-label-' + id);
+					var valueEl = document.getElementById('counter-value-' + id);
+					var labelVal = c.label || '';
+					var valueVal = c.value !== undefined && c.value !== '' ? c.value : '0';
+					if (labelEl && labelEl.value !== labelVal) {
+						labelEl.value = labelVal;
+						changed = true;
+					}
+					if (valueEl && valueEl.value !== valueVal) {
+						valueEl.value = valueVal;
+						changed = true;
+					}
+				}
+			});
+			return changed;
+		}
 
 		function isFieldFocused(id) {
 			var el = document.activeElement;
@@ -893,6 +1319,7 @@
 			document.getElementById('p2Score').value = data.p2Score || '0';
 			document.getElementById('round').value = data.round || '';
 			setGameValue(data.game || '');
+			renderCounters(data);
 			lastSyncedTimestamp = data.timestamp || '';
 		}
 
@@ -916,6 +1343,7 @@
 					changed = true;
 				}
 			}
+			changed = applyCountersRemote(data.counters) || changed;
 
 			lastSyncedTimestamp = data.timestamp || '';
 
@@ -1045,6 +1473,7 @@
 				p2Score: String(Math.max(0, Math.min(99, p2Raw))),
 				round: document.getElementById('round').value,
 				game: getGameValue(),
+				counters: getCountersData(),
 				timestamp: String(Math.floor(Date.now() / 1000))
 			};
 		}

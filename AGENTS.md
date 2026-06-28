@@ -22,13 +22,15 @@ Three sync modes, auto-detected by priority:
 
 **Auth (server-side):** When `FGC_AUTH_TOKEN` env var is set (≥32 chars), `POST /scoreboard.json` and `GET /auth/check` require `Authorization: Bearer <token>`. `GET /scoreboard.json`, overlay assets, `/`, and `/health` stay public. Controller shows a token gate when the server sends `X-FGC-Auth-Required: 1`.
 
-**JSON schema** (all values are strings):
+**JSON schema** (core fields are strings):
 
 ```
 p1Name, p1Team, p1Score, p2Name, p2Team, p2Score, round, game, timestamp
 ```
 
-The controller sets `timestamp` on every save. The Rust server (`fgc-server`) validates allowed keys and string values (rejects unknown keys, non-strings, values >128 chars).
+Optional `counters` object (max 8 entries): each key is a counter ID; each value is `{ "label": string (≤64), "value": string "0"–"99" }`. Counter values must be strings for overlay change detection.
+
+The controller sets `timestamp` on every save. The Rust server (`fgc-server`) validates allowed keys and string values for core fields (rejects unknown top-level keys, non-strings, values >128 chars). The optional `counters` object is validated separately on POST.
 
 **Local mode limitation:** Only syncs across tabs in the **same browser** via `storage` events. Does **not** work for phone controller + OBS overlay — use LAN or remote for that.
 
@@ -37,7 +39,8 @@ The controller sets `timestamp` on every save. The Rust server (`fgc-server`) va
 | Page | URL |
 |------|-----|
 | Controller | `/` (`web/index.html`) |
-| Overlay (OBS) | `/overlay/scoreboard.html` |
+| Score overlay (OBS) | `/overlay/scoreboard.html` |
+| Counters overlay (OBS, optional) | `/overlay/counters.html` |
 | Score API | `/scoreboard.json` |
 
 **Deployment paths** (not separate sync modes):
@@ -55,12 +58,16 @@ LAN and tunnel have **no authentication by default** (set `FGC_AUTH_TOKEN` to en
 ### Key Files
 
 - **`README.md`** — End-user setup (LAN, tunnel, remote, customization, security)
-- **`web/index.html`** — Controller (neo-brutalist mobile form). Pico CSS + custom overrides. Token gate + `authFetch()` for LAN/hosted auth.
+- **`web/index.html`** — Controller (neo-brutalist mobile form). Pico CSS + custom overrides. Token gate + `authFetch()` for LAN/hosted auth. Optional collapsible **Additional Counters** section (dynamic add/remove, greyscale styling).
 - **`web/css/pico.classless.min.css`** — Pico CSS v2.1.1 classless variant (controller only)
 - **`web/overlay/scoreboard.html`** — Main OBS overlay (1920×1080). Animation config as inline `<script>` vars. `?bin=` required only in **remote** mode.
+- **`web/overlay/counters.html`** — Optional counters OBS overlay (1920×1080). Greyscale rectangular cards; reads `counters` from same JSON payload.
 - **`web/overlay/js/scoreboard.js`** — Core overlay logic: mode setup, polling, game layout, TweenMax animations, logo rotation, `shrinkToFit()`
+- **`web/overlay/js/counters.js`** — Counters overlay: polling/localStorage sync, dynamic counter cards, value-change fade animations
 - **`web/overlay/css/style.scss`** — SCSS source; compile to `style.css`
 - **`web/overlay/css/style.css`** — Compiled overlay CSS
+- **`web/overlay/css/counters.scss`** — Counters overlay SCSS source; compile to `counters.css`
+- **`web/overlay/css/counters.css`** — Compiled counters overlay CSS
 - **`server/`** — Rust Axum HTTP server (`fgc-server` binary). API routes + static file serving from `web/`. Built-in localtunnel client (`server/src/tunnel/`). Env: `PORT`, `FGC_BIND`, `FGC_AUTH_TOKEN`, `FGC_TUNNEL`, `FGC_TUNNEL_HOST`, `FGC_TUNNEL_SUBDOMAIN`, `FGC_ASSET_ROOT` (default `web`), `FGC_DATA_DIR` (default `data`), `FGC_RATE_LIMIT`, `FGC_LOG_*`. Run: `cargo run --manifest-path server/Cargo.toml` or `./scripts/start.sh`
 - **`scripts/start.sh`** — Start server LAN-only (`--no-tunnel`; release binary or `cargo run`)
 - **`scripts/server-parity-test.sh`** — API/static smoke tests
@@ -73,7 +80,8 @@ LAN and tunnel have **no authentication by default** (set `FGC_AUTH_TOKEN` to en
 ### Important Implementation Details
 
 - **Scores are sent as strings** from the controller (`String(input.value)`), clamped 0–99. The overlay compares scores as text to detect changes and trigger animations. Sending numbers instead of strings will break change detection.
-- **Remote mode requires `?bin=<npoint_id>`** on both controller (`/`) and overlay (`/overlay/scoreboard.html`).
+- **Counters** — optional `counters` object in the same JSON payload; controller section collapsed by default; steppers auto-save; max 8 counters; **Clear All** does not reset counters.
+- **Remote mode requires `?bin=<npoint_id>`** on both controller (`/`) and overlay (`/overlay/scoreboard.html` or `/overlay/counters.html`).
 - **LAN mode requires no URL parameters** — run `./scripts/start.sh` and open the printed URLs.
 - **Bearer auth** — when enabled, controller stores token in `sessionStorage` (`fgc-auth-token`); attach to same-origin fetch only. Bootstrap via `?token=` once (stripped from URL). Overlay unchanged (public GET).
 - **Score steppers auto-save** (`adjustScore()` calls `save()`); **Swap / Reset / Clear do not** — user must hit Save to push those changes.

@@ -21,7 +21,8 @@ Pick the deployment that fits your event:
 **URLs (LAN / Hosted / Tunnel):**
 
 - **Controller:** `https://<host>/`
-- **Overlay (OBS):** `https://<host>/overlay/scoreboard.html` — set browser source to **1920×1080**
+- **Score overlay (OBS):** `https://<host>/overlay/scoreboard.html` — set browser source to **1920×1080**
+- **Counters overlay (OBS, optional):** `https://<host>/overlay/counters.html` — same resolution; greyscale custom counters configured in the controller
 
 > **Migration:** If you bookmarked the old overlay path `/_overlays/scoreboard.html`, update OBS to `/overlay/scoreboard.html`.
 
@@ -71,6 +72,7 @@ Best for in-person tournaments. Download a [release archive](https://github.com/
    FGC Scoreboard Server
    Controller: http://<your-lan-ip>:8080/
    Overlay:    http://<your-lan-ip>:8080/overlay/scoreboard.html
+   Counters:   http://<your-lan-ip>:8080/overlay/counters.html
    ```
 3. Open the **Controller** URL on your phone or tablet.
 4. In OBS, add a **Browser Source** pointing to the **Overlay** URL. Set the resolution to **1920×1080**.
@@ -123,6 +125,7 @@ The server prints a public HTTPS URL on startup:
 
 - **Controller:** `https://<subdomain>.loca.lt/`
 - **Overlay:** `https://<subdomain>.loca.lt/overlay/scoreboard.html`
+- **Counters (optional):** `https://<subdomain>.loca.lt/overlay/counters.html`
 
 Custom port: `./fgc-server --port 9090`
 
@@ -155,6 +158,10 @@ Best for online tournaments or when the controller and streaming PC aren't on th
    ```
    https://yourgithubpages.url/overlay/scoreboard.html?bin=YOUR_BIN_ID
    ```
+   Optional counters overlay (same bin ID):
+   ```
+   https://yourgithubpages.url/overlay/counters.html?bin=YOUR_BIN_ID
+   ```
 3. Open the controller with the same bin ID:
    ```
    https://yourgithubpages.url/?bin=YOUR_BIN_ID
@@ -165,7 +172,7 @@ Best for online tournaments or when the controller and streaming PC aren't on th
 
 ### Local Mode (Same Browser Only)
 
-For quick testing without a server: open `web/index.html` and `web/overlay/scoreboard.html` as `file://` URLs in the **same browser**. The controller writes to `localStorage` and the overlay syncs via storage events.
+For quick testing without a server: open `web/index.html` and `web/overlay/scoreboard.html` as `file://` URLs in the **same browser**. The controller writes to `localStorage` and the overlay syncs via storage events. Add `web/overlay/counters.html` as a second tab for the optional counters overlay.
 
 > **Limitation:** Does not work across devices (e.g. phone controller + OBS on another machine). Use LAN, Tunnel, Hosted, or Remote mode for that.
 
@@ -256,6 +263,8 @@ Three sync modes, auto-detected by priority:
 3. **Local** (`file://` protocol) — Controller writes to `localStorage`; overlay syncs via browser storage events.
 
 All scoreboard fields are strings in JSON (`p1Name`, `p1Team`, `p1Score`, `p2Name`, `p2Team`, `p2Score`, `round`, `game`, `timestamp`). The controller sets `timestamp` on every save so multiple controllers can detect changes.
+
+**Optional counters:** Expand **Additional Counters** in the controller to add up to 8 custom counters (label + value 0–99). Values sync through the same JSON payload under a `counters` object and display on `/overlay/counters.html` as a separate OBS browser source. Counter steppers auto-save; **Clear All** does not remove counters.
 
 **Hosted (Railway):** See [deploy/railway.md](deploy/railway.md). Infrastructure as code in `.railway/railway.ts`. POST rate limiting defaults to 60 requests/minute per IP (`FGC_RATE_LIMIT`).
 

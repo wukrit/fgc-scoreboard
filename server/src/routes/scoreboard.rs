@@ -14,6 +14,9 @@ use crate::state::AppState;
 
 pub const MAX_BODY_SIZE: usize = 65536;
 pub const SCOREBOARD_FILE: &str = "scoreboard.json";
+pub const MAX_COUNTERS: usize = 8;
+pub const MAX_COUNTER_LABEL: usize = 64;
+pub const MAX_COUNTER_ID: usize = 32;
 
 pub static ALLOWED_KEYS: [&str; 9] = [
     "p1Name",
@@ -37,7 +40,8 @@ pub fn default_data() -> Value {
         "p2Score": "0",
         "round": "",
         "game": "",
-        "timestamp": ""
+        "timestamp": "",
+        "counters": {}
     })
 }
 
@@ -139,13 +143,68 @@ fn validate_schema(data: &Value) -> bool {
         return false;
     }
     let obj = data.as_object().unwrap();
-    let allowed: HashSet<&str> = ALLOWED_KEYS.iter().copied().collect();
+    let mut allowed: HashSet<&str> = ALLOWED_KEYS.iter().copied().collect();
+    allowed.insert("counters");
     if !obj.keys().all(|k| allowed.contains(k.as_str())) {
         return false;
     }
-    obj.values().all(|v| {
-        v.is_string() && v.as_str().map(|s| s.len() <= 128).unwrap_or(false)
-    })
+    for (key, value) in obj {
+        if key == "counters" {
+            if !validate_counters(value) {
+                return false;
+            }
+        } else if !value.is_string() || value.as_str().map(|s| s.len() > 128).unwrap_or(true) {
+            return false;
+        }
+    }
+    true
+}
+
+fn validate_counters(value: &Value) -> bool {
+    let counters = match value.as_object() {
+        Some(o) => o,
+        None => return false,
+    };
+    if counters.len() > MAX_COUNTERS {
+        return false;
+    }
+    for (id, entry) in counters {
+        if id.is_empty() || id.len() > MAX_COUNTER_ID {
+            return false;
+        }
+        let entry_obj = match entry.as_object() {
+            Some(o) => o,
+            None => return false,
+        };
+        if entry_obj.len() != 2
+            || !entry_obj.contains_key("label")
+            || !entry_obj.contains_key("value")
+        {
+            return false;
+        }
+        for (field, field_val) in entry_obj {
+            if field != "label" && field != "value" {
+                return false;
+            }
+            let s = match field_val.as_str() {
+                Some(s) => s,
+                None => return false,
+            };
+            match field.as_str() {
+                "label" if s.len() > MAX_COUNTER_LABEL => return false,
+                "value" if !validate_counter_value(s) => return false,
+                _ => {}
+            }
+        }
+    }
+    true
+}
+
+fn validate_counter_value(s: &str) -> bool {
+    if s.is_empty() || s.len() > 2 || !s.chars().all(|c| c.is_ascii_digit()) {
+        return false;
+    }
+    s.parse::<u32>().map(|n| n <= 99).unwrap_or(false)
 }
 
 fn atomic_write(
