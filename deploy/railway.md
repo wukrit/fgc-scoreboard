@@ -4,9 +4,12 @@ Hosted mode runs `fgc-server` (Rust) on [Railway](https://railway.com) with HTTP
 
 ## Architecture
 
-- **Overlay** (`/overlay/scoreboard.html`) — public read via `GET /scoreboard.json`
+- **Score overlay** (`/overlay/scoreboard.html`) — public read via `GET /scoreboard.json`
+- **Counters overlay** (`/overlay/counters.html`, optional) — same JSON payload; greyscale custom counters from the controller
 - **Controller** (`/`) — token gate; writes require `Authorization: Bearer <token>`
 - **Scores** — stored in `data/scoreboard.json` on the container filesystem; **reset on redeploy**
+
+POST validation: core fields are strings; `p1Score`, `p2Score`, and counter values must be numeric strings `"0"`–`"999"`.
 
 ## First-time setup
 
@@ -72,20 +75,23 @@ DOMAIN=https://your-app.up.railway.app
 curl "$DOMAIN/health"
 curl "$DOMAIN/scoreboard.json"
 
+curl -sf "$DOMAIN/overlay/counters.html" | head -c 20 | grep -qi '<html' && echo "counters overlay OK"
+
 curl -X POST "$DOMAIN/scoreboard.json" \
   -H "Authorization: Bearer $FGC_AUTH_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"p1Name":"Test","p1Team":"","p1Score":"1","p2Name":"","p2Team":"","p2Score":"0","round":"","game":"SF6","timestamp":"1234567890"}'
+  -d '{"p1Name":"Test","p1Team":"","p1Score":"999","p2Name":"","p2Team":"","p2Score":"0","round":"","game":"SF6","timestamp":"1234567890","counters":{"c1":{"label":"Stock","value":"100"}}}'
 ```
 
-Open `$DOMAIN/`, enter the token, and save scores. Point OBS at `$DOMAIN/overlay/scoreboard.html`.
+Open `$DOMAIN/`, enter the token, and save scores. Point OBS at `$DOMAIN/overlay/scoreboard.html`. Optional counters: `$DOMAIN/overlay/counters.html`.
 
 ## Operator workflow
 
 | Share with operators | Keep secret |
 |---------------------|-------------|
 | Controller URL (`/`) | Bearer token |
-| Overlay URL (OBS) | — |
+| Score overlay URL (OBS) | — |
+| Counters overlay URL (OBS, optional) | — |
 
 Optional one-time QR/link: `/?token=...` (token is stripped from the URL after load).
 

@@ -46,11 +46,12 @@ Infrastructure is defined in [`.railway/railway.ts`](.railway/railway.ts). See [
 | Share with operators | Keep secret |
 |---------------------|-------------|
 | Controller URL (`/`) | Bearer token |
-| Overlay URL (OBS) | — |
+| Score overlay URL (OBS) | — |
+| Counters overlay URL (OBS, optional) | — |
 
 Optional one-time link for operators: `/?token=YOUR_TOKEN` (token is stripped from the URL after unlock).
 
-> **Note:** Scores reset when Railway redeploys. The overlay URL is safe to share; keep the Bearer token secret.
+> **Note:** Scores reset when Railway redeploys. Overlay URLs are safe to share; keep the Bearer token secret.
 
 ---
 
@@ -75,7 +76,7 @@ Best for in-person tournaments. Download a [release archive](https://github.com/
    Counters:   http://<your-lan-ip>:8080/overlay/counters.html
    ```
 3. Open the **Controller** URL on your phone or tablet.
-4. In OBS, add a **Browser Source** pointing to the **Overlay** URL. Set the resolution to **1920×1080**.
+4. In OBS, add a **Browser Source** pointing to the **Overlay** URL. Set the resolution to **1920×1080**. Optionally add a second browser source at `/overlay/counters.html` for custom counters.
 5. Enter scores on the controller — score changes auto-save. Hit **Save** for name, round, game, swap, reset, or clear changes.
 
 Custom port: `./scripts/start.sh --port 9090`
@@ -98,8 +99,8 @@ Binary releases are published to [GitHub Releases](https://github.com/wukrit/fgc
 1. Ensure `main` is green (GitHub Pages + Server Build workflows).
 2. Tag and push (version comes from the tag name):
    ```bash
-   git tag -a v0.1.0 -m "v0.1.0"
-   git push origin v0.1.0
+   git tag -a v0.1.3 -m "v0.1.3"
+   git push origin v0.1.3
    ```
 3. Confirm the **Release** workflow completes and the GitHub Release lists all platform archives plus `SHA256SUMS.txt` and `SHA256SUMS.txt.asc`.
 
@@ -186,6 +187,7 @@ The controller is a mobile-friendly web form for updating:
 - **Scores** — tap **+** / **−** (auto-saves) or type a score directly (0–999, saves on blur or Enter)
 - **Round**
 - **Game** — pick from 12 presets or toggle **Enter custom name** for any game
+- **Additional Counters (optional)** — expand the collapsible section to add up to 8 custom label/value counters (0–999) for a separate OBS overlay
 
 **Actions:**
 
@@ -199,6 +201,23 @@ The controller is a mobile-friendly web form for updating:
 **Multi-controller sync:** In remote, LAN, and hosted modes, every open controller polls for updates every second. Changes from another operator appear automatically; fields you are actively editing are left alone.
 
 **Auth (LAN / Hosted / Tunnel with `FGC_AUTH_TOKEN`):** The controller shows a token gate before writes. Enter the Bearer token once per session, or bootstrap via `?token=` in the URL. Use **Lock** to require the token again.
+
+---
+
+## Additional Counters Overlay
+
+Use this when you need extra on-stream stats (stocks, timeouts, side bets, etc.) beyond the main P1/P2 scores.
+
+1. In the controller, expand **Additional Counters (optional)** and click **Add Counter**.
+2. Set a label (≤64 chars) and value (0–999). Stepper changes auto-save; label edits save on blur.
+3. In OBS, add a second **Browser Source** at **1920×1080** pointing to `/overlay/counters.html` (same host and `?bin=` as the score overlay in remote mode).
+4. Counters appear as greyscale cards along the bottom of the frame. Values animate on change.
+
+**Notes:**
+
+- Up to 8 counters; **Remove** deletes a row and auto-saves.
+- **Clear All** resets player fields only — counters are preserved.
+- Counter IDs are generated client-side; the server validates shape, label length, and numeric values 0–999.
 
 ---
 
@@ -232,13 +251,14 @@ Custom game names work too — they use the default layout. BBTAG and UNICLR als
 
 ## Customization
 
-**Colors and styling:** Edit the SCSS variables at the top of `web/overlay/css/style.scss`, then compile:
+**Colors and styling:** Edit the SCSS variables at the top of `web/overlay/css/style.scss` and/or `web/overlay/css/counters.scss`, then compile:
 
 ```
 sass web/overlay/css/style.scss web/overlay/css/style.css
+sass web/overlay/css/counters.scss web/overlay/css/counters.css
 ```
 
-Default accents: `$p1-accent: #ff4444`, `$p2-accent: #4488ff`.
+Default accents: `$p1-accent: #ff4444`, `$p2-accent: #4488ff`. The score overlay auto-shrinks triple-digit scores (`fitScoreDisplay()` in `scoreboard.js`) so values up to 999 stay inside the score boxes.
 
 **Animation timing:** Edit the inline `<script>` variables in `web/overlay/scoreboard.html` (timing, offsets, distances).
 
@@ -262,9 +282,9 @@ Three sync modes, auto-detected by priority:
 2. **LAN / Hosted** (served over `http:` or `https:` without `?bin=`) — Controller POSTs to `/scoreboard.json` on the same origin; controller and overlay poll every 1s. When `FGC_AUTH_TOKEN` is set, POSTs require `Authorization: Bearer <token>`; reads stay public.
 3. **Local** (`file://` protocol) — Controller writes to `localStorage`; overlay syncs via browser storage events.
 
-All scoreboard fields are strings in JSON (`p1Name`, `p1Team`, `p1Score`, `p2Name`, `p2Team`, `p2Score`, `round`, `game`, `timestamp`). The controller sets `timestamp` on every save so multiple controllers can detect changes.
+Core fields are strings in JSON (`p1Name`, `p1Team`, `p1Score`, `p2Name`, `p2Team`, `p2Score`, `round`, `game`, `timestamp`). Scores and counter values must be numeric strings from `"0"` to `"999"` — the server rejects four-digit values and non-numeric input on POST. The controller sets `timestamp` on every save so multiple controllers can detect changes.
 
-**Optional counters:** Expand **Additional Counters** in the controller to add up to 8 custom counters (label + value 0–999). Values sync through the same JSON payload under a `counters` object and display on `/overlay/counters.html` as a separate OBS browser source. Counter steppers auto-save; **Clear All** does not remove counters.
+**Optional `counters` object** (max 8 entries): each key is a counter ID (≤32 chars); each value is `{ "label": string (≤64), "value": string "0"–"999" }`. Syncs through the same `/scoreboard.json` payload and displays on `/overlay/counters.html`. See [Additional Counters Overlay](#additional-counters-overlay).
 
 **Hosted (Railway):** See [deploy/railway.md](deploy/railway.md). Infrastructure as code in `.railway/railway.ts`. POST rate limiting defaults to 60 requests/minute per IP (`FGC_RATE_LIMIT`).
 

@@ -28,9 +28,9 @@ Three sync modes, auto-detected by priority:
 p1Name, p1Team, p1Score, p2Name, p2Team, p2Score, round, game, timestamp
 ```
 
-Optional `counters` object (max 8 entries): each key is a counter ID; each value is `{ "label": string (≤64), "value": string "0"–"999" }`. Counter values must be strings for overlay change detection.
+Optional `counters` object (max 8 entries): each key is a counter ID (≤32 chars); each value is `{ "label": string (≤64), "value": string "0"–"999" }`. Counter values must be strings for overlay change detection.
 
-The controller sets `timestamp` on every save. The Rust server (`fgc-server`) validates allowed keys and string values for core fields (rejects unknown top-level keys, non-strings, values >128 chars). The optional `counters` object is validated separately on POST.
+The controller sets `timestamp` on every save. The Rust server (`fgc-server`) validates allowed keys and string values for core fields (rejects unknown top-level keys, non-strings, values >128 chars). `p1Score`, `p2Score`, and counter `value` fields are validated as numeric strings 0–999 (`MAX_SCORE_VALUE`); four-digit values return 400. The optional `counters` object is validated separately on POST (ID length, label length, max 8 entries).
 
 **Local mode limitation:** Only syncs across tabs in the **same browser** via `storage` events. Does **not** work for phone controller + OBS overlay — use LAN or remote for that.
 
@@ -70,7 +70,7 @@ LAN and tunnel have **no authentication by default** (set `FGC_AUTH_TOKEN` to en
 - **`web/overlay/css/counters.css`** — Compiled counters overlay CSS
 - **`server/`** — Rust Axum HTTP server (`fgc-server` binary). API routes + static file serving from `web/`. Built-in localtunnel client (`server/src/tunnel/`). Env: `PORT`, `FGC_BIND`, `FGC_AUTH_TOKEN`, `FGC_TUNNEL`, `FGC_TUNNEL_HOST`, `FGC_TUNNEL_SUBDOMAIN`, `FGC_ASSET_ROOT` (default `web`), `FGC_DATA_DIR` (default `data`), `FGC_RATE_LIMIT`, `FGC_LOG_*`. Run: `cargo run --manifest-path server/Cargo.toml` or `./scripts/start.sh`
 - **`scripts/start.sh`** — Start server LAN-only (`--no-tunnel`; release binary or `cargo run`)
-- **`scripts/server-parity-test.sh`** — API/static smoke tests
+- **`scripts/server-parity-test.sh`** — API/static smoke tests (health, static routes, counters overlay, score/counter 0–999 validation, schema rejection)
 - **`.railway/railway.ts`** — Railway IaC (service, healthcheck, env vars)
 - **`package.json`** — `railway` SDK devDependency for IaC only
 - **`deploy/railway.md`** — Railway deployment guide
@@ -88,11 +88,12 @@ LAN and tunnel have **no authentication by default** (set `FGC_AUTH_TOKEN` to en
 - **Multi-controller sync** — remote/LAN controllers poll every 1s (same interval as overlay). Incoming updates merge field-by-field and skip focused inputs; `timestamp` detects changes. Local mode uses `storage` events for cross-tab sync only.
 - **Overlay renders user data with jQuery `.text()`** (not `.html()`) to prevent XSS.
 - **`GAME_GROUPS` in `scoreboard.js`** — data-driven game layout lookup; add new games to the appropriate array.
+- **Overlay auto-fit** — `fitScoreDisplay()` shrinks score font for triple-digit values; `shrinkToFit()` handles long player/round names (max 2px reduction)
 - **1920×1080** — overlay is fixed to this resolution (`body` in SCSS); OBS browser source should match.
 
 ### Supported Games
 
-12 presets in the controller datalist: BBCF, BBTAG, DBFZ, GGXRD, KOFXIV, MVCI, SF6, SFVCE, TEKKEN7, UMVC3, UNICLR, USF4. The game field is free-text — custom games work and default to `adjust2`.
+12 presets in the controller `<select>`: BBCF, BBTAG, DBFZ, GGXRD, KOFXIV, MVCI, SF6, SFVCE, TEKKEN7, UMVC3, UNICLR, USF4. Toggle **Enter custom name** for free-text games — custom names default to `adjust2`.
 
 ### Game-Specific Layout
 
@@ -105,18 +106,25 @@ Groups are defined in `GAME_GROUPS` at the top of `web/overlay/js/scoreboard.js`
 | **adjust3** (custom +28px) | USF4 | Custom offset for wrappers and BG |
 | **logoAdjust** (logo position/scale via `adjustLg`) | BBTAG, UNICLR | Logo repositioned/scaled |
 
-**Adding a new game:** Add to the datalist in `web/index.html` and to the appropriate group in `GAME_GROUPS` in `scoreboard.js`.
+**Adding a new game:** Add an `<option>` to the game `<select>` in `web/index.html` and to the appropriate group in `GAME_GROUPS` in `scoreboard.js`.
 
 Inline config in `web/overlay/scoreboard.html`: `adjust1`, `adjust2`, `adjust3`, `adjustLg` arrays.
 
 ### scoreboard.js Internals
 
+- `fitScoreDisplay()` — ratio-based font shrink so triple-digit scores fit the score box (min 22px)
 - `shrinkToFit()` — auto-shrinks long player/round names (max 2px reduction)
 - `createPoller()` — unified fetch poller with AbortController for remote + LAN
 - `applyGameLayout()` / `playCSSAnimations()` — game change triggers fade-out, reposition, replay CSS keyframes, fade-in
 - `currentGame` JS variable replaces removed `#gameHold` div
 
 Animation config vars remain inline in `web/overlay/scoreboard.html`.
+
+### counters.js Internals
+
+- `createPoller()` — same fetch poller pattern as scoreboard (AbortController, 1s interval, `Bypass-Tunnel-Reminder` header)
+- Dynamic card render from `counters` object; value changes trigger fade animation
+- `shrinkLabelToFit()` — scales long counter labels within card bounds
 
 ### Dependencies (vendored, no package manager)
 
@@ -135,9 +143,10 @@ To compile SCSS → CSS:
 
 ```
 sass web/overlay/css/style.scss web/overlay/css/style.css
+sass web/overlay/css/counters.scss web/overlay/css/counters.css
 ```
 
-Both `style.scss` and `style.css` are committed.
+Both SCSS/CSS pairs are committed.
 
 **Remote mode testing:** `web/overlay/scoreboard.html?bin=<id>` and `/?bin=<id>` on hosted Pages or local server.
 
@@ -145,7 +154,7 @@ Both `style.scss` and `style.css` are committed.
 
 **GitHub Pages:** `.github/workflows/pages.yml` deploys `web/`; `web/.nojekyll` disables Jekyll.
 
-**Binary releases:** `.github/workflows/release.yml` runs on `v*` tag push — builds `fgc-server` for Linux (x64/ARM64), macOS (x64/ARM64), and Windows x64, publishes archives to GitHub Releases with SHA256 checksums. `.github/workflows/server-build.yml` smoke-tests `cargo build --release` on PRs and `main`. To cut a release: `git tag -a v0.1.0 -m "v0.1.0"` then `git push origin v0.1.0` (keep `server/Cargo.toml` version in sync manually).
+**Binary releases:** `.github/workflows/release.yml` runs on `v*` tag push — builds `fgc-server` for Linux (x64/ARM64), macOS (x64/ARM64), and Windows x64, publishes archives to GitHub Releases with SHA256 checksums (GPG-signed when `GPG_PRIVATE_KEY` is configured — see [docs/signing.md](docs/signing.md)). `.github/workflows/server-build.yml` smoke-tests `cargo build --release` on PRs and `main`. To cut a release: `git tag -a v0.1.3 -m "v0.1.3"` then `git push origin v0.1.3` (keep `server/Cargo.toml` version in sync manually).
 
 ### LAN Mode (Tournament Use)
 
@@ -188,9 +197,9 @@ Release binary defaults to tunnel on. If localtunnel is unreachable (offline), i
 
 ## docs/
 
-```
-docs/
-├── brainstorms/
-├── plans/
-└── solutions/
-```
+| File | Purpose |
+|------|---------|
+| [signing.md](docs/signing.md) | GPG release signing setup and verification |
+| [release-signing.pub.asc](docs/release-signing.pub.asc) | Public key for verifying release checksums |
+
+`docs/brainstorms/`, `docs/plans/`, and `docs/solutions/` are gitignored working directories (not shipped in the repo).
