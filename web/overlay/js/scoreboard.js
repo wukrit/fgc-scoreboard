@@ -27,6 +27,19 @@ function init(){
 		logoAdjust: ['BBTAG', 'UNICLR']
 	};
 
+	// --- Helper: shrink score font until digits fit the score box ---
+	function fitScoreDisplay(el, defaultSize) {
+		var size = parseFloat(defaultSize);
+		el.style.fontSize = size + 'px';
+		var ratio = Math.min(
+			el.offsetWidth / Math.max(el.scrollWidth, 1),
+			el.offsetHeight / Math.max(el.scrollHeight, 1)
+		);
+		if (ratio < 1) {
+			el.style.fontSize = Math.max(Math.floor(size * ratio), 22) + 'px';
+		}
+	}
+
 	// --- Helper: shrink font until element content fits within its bounds ---
 	// Uses a ratio-based approach to minimize forced reflows (2 instead of N).
 	function shrinkToFit(el, defaultSize) {
@@ -220,6 +233,8 @@ function init(){
 			$p2Score.text(p2Score);
 			$round.text(round);
 
+			fitScoreDisplay($p1Score[0], 34);
+			fitScoreDisplay($p2Score[0], 34);
 			shrinkToFit($p1Wrapper[0], nameSize);
 			shrinkToFit($p2Wrapper[0], nameSize);
 			shrinkToFit($round[0], rdSize);
@@ -265,6 +280,7 @@ function init(){
 				TweenMax.killTweensOf('#p1Score');
 				TweenMax.to('#p1Score',.3,{css:{opacity: 0},ease:Quad.easeOut,delay:0,onComplete:function(){
 					$p1Score.text(p1Score);
+					fitScoreDisplay($p1Score[0], 34);
 					TweenMax.to('#p1Score',.3,{css:{opacity: 1},ease:Quad.easeOut,delay:.2});
 				}});
 			}
@@ -273,6 +289,7 @@ function init(){
 				TweenMax.killTweensOf('#p2Score');
 				TweenMax.to('#p2Score',.3,{css:{opacity: 0},ease:Quad.easeOut,delay:0,onComplete:function(){
 					$p2Score.text(p2Score);
+					fitScoreDisplay($p2Score[0], 34);
 					TweenMax.to('#p2Score',.3,{css:{opacity: 1},ease:Quad.easeOut,delay:.2});
 				}});
 			}

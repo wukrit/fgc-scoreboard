@@ -28,7 +28,7 @@ Three sync modes, auto-detected by priority:
 p1Name, p1Team, p1Score, p2Name, p2Team, p2Score, round, game, timestamp
 ```
 
-Optional `counters` object (max 8 entries): each key is a counter ID; each value is `{ "label": string (≤64), "value": string "0"–"99" }`. Counter values must be strings for overlay change detection.
+Optional `counters` object (max 8 entries): each key is a counter ID; each value is `{ "label": string (≤64), "value": string "0"–"999" }`. Counter values must be strings for overlay change detection.
 
 The controller sets `timestamp` on every save. The Rust server (`fgc-server`) validates allowed keys and string values for core fields (rejects unknown top-level keys, non-strings, values >128 chars). The optional `counters` object is validated separately on POST.
 
@@ -79,7 +79,7 @@ LAN and tunnel have **no authentication by default** (set `FGC_AUTH_TOKEN` to en
 
 ### Important Implementation Details
 
-- **Scores are sent as strings** from the controller (`String(input.value)`), clamped 0–99. The overlay compares scores as text to detect changes and trigger animations. Sending numbers instead of strings will break change detection.
+- **Scores are sent as strings** from the controller (`String(input.value)`), clamped 0–999. The overlay compares scores as text to detect changes and trigger animations. Sending numbers instead of strings will break change detection.
 - **Counters** — optional `counters` object in the same JSON payload; controller section collapsed by default; steppers auto-save; max 8 counters; **Clear All** does not reset counters.
 - **Remote mode requires `?bin=<npoint_id>`** on both controller (`/`) and overlay (`/overlay/scoreboard.html` or `/overlay/counters.html`).
 - **LAN mode requires no URL parameters** — run `./scripts/start.sh` and open the printed URLs.

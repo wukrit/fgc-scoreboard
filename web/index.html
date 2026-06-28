@@ -840,7 +840,7 @@
 						<div class="score-stepper" role="group" aria-labelledby="p1-score-label">
 							<span id="p1-score-label" class="visually-hidden">Player 1 score</span>
 							<button type="button" class="score-btn" onclick="adjustScore('p1Score', -1)" aria-label="Decrease Player 1 score">&minus;</button>
-							<input type="text" id="p1Score" name="p1Score" value="0" class="score-display" inputmode="numeric" pattern="[0-9]*" maxlength="2" aria-label="Player 1 score" onblur="commitScore('p1Score')" oninput="filterScoreInput('p1Score')" onkeydown="handleScoreKeydown(event, 'p1Score')">
+							<input type="text" id="p1Score" name="p1Score" value="0" class="score-display" inputmode="numeric" pattern="[0-9]*" maxlength="3" aria-label="Player 1 score" onblur="commitScore('p1Score')" oninput="filterScoreInput('p1Score')" onkeydown="handleScoreKeydown(event, 'p1Score')">
 							<button type="button" class="score-btn" onclick="adjustScore('p1Score', 1)" aria-label="Increase Player 1 score">+</button>
 						</div>
 					</fieldset>
@@ -862,7 +862,7 @@
 						<div class="score-stepper" role="group" aria-labelledby="p2-score-label">
 							<span id="p2-score-label" class="visually-hidden">Player 2 score</span>
 							<button type="button" class="score-btn" onclick="adjustScore('p2Score', -1)" aria-label="Decrease Player 2 score">&minus;</button>
-							<input type="text" id="p2Score" name="p2Score" value="0" class="score-display" inputmode="numeric" pattern="[0-9]*" maxlength="2" aria-label="Player 2 score" onblur="commitScore('p2Score')" oninput="filterScoreInput('p2Score')" onkeydown="handleScoreKeydown(event, 'p2Score')">
+							<input type="text" id="p2Score" name="p2Score" value="0" class="score-display" inputmode="numeric" pattern="[0-9]*" maxlength="3" aria-label="Player 2 score" onblur="commitScore('p2Score')" oninput="filterScoreInput('p2Score')" onkeydown="handleScoreKeydown(event, 'p2Score')">
 							<button type="button" class="score-btn" onclick="adjustScore('p2Score', 1)" aria-label="Increase Player 2 score">+</button>
 						</div>
 					</fieldset>
@@ -1109,6 +1109,7 @@
 		var lastSyncedTimestamp = '';
 		var initialSyncDone = false;
 		var MAX_COUNTERS = 8;
+		var MAX_SCORE_VALUE = 999;
 
 		function generateCounterId() {
 			var chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -1146,7 +1147,7 @@
 						'<span class="stepper-label">Value</span>' +
 						'<div class="counter-stepper" role="group" aria-label="' + escapeAttr(label || 'Counter') + ' value">' +
 							'<button type="button" class="counter-btn" onclick="adjustCounter(\'' + id + '\', -1)" aria-label="Decrease ' + escapeAttr(label || 'counter') + '">&minus;</button>' +
-							'<input type="text" id="counter-value-' + id + '" value="' + escapeAttr(value || '0') + '" class="counter-value" inputmode="numeric" pattern="[0-9]*" maxlength="2" aria-label="' + escapeAttr(label || 'Counter') + ' value" onblur="commitCounter(\'' + id + '\')" oninput="filterCounterInput(\'' + id + '\')" onkeydown="handleCounterKeydown(event, \'' + id + '\')">' +
+							'<input type="text" id="counter-value-' + id + '" value="' + escapeAttr(value || '0') + '" class="counter-value" inputmode="numeric" pattern="[0-9]*" maxlength="3" aria-label="' + escapeAttr(label || 'Counter') + ' value" onblur="commitCounter(\'' + id + '\')" oninput="filterCounterInput(\'' + id + '\')" onkeydown="handleCounterKeydown(event, \'' + id + '\')">' +
 							'<button type="button" class="counter-btn" onclick="adjustCounter(\'' + id + '\', 1)" aria-label="Increase ' + escapeAttr(label || 'counter') + '">+</button>' +
 						'</div>' +
 					'</div>' +
@@ -1186,7 +1187,7 @@
 				var raw = parseInt(valueEl.value, 10) || 0;
 				counters[id] = {
 					label: labelEl.value,
-					value: String(Math.max(0, Math.min(99, raw)))
+					value: String(Math.max(0, Math.min(MAX_SCORE_VALUE, raw)))
 				};
 			});
 			return counters;
@@ -1217,7 +1218,7 @@
 			if (!input) return 0;
 			var val = parseInt(input.value, 10);
 			if (isNaN(val)) val = 0;
-			val = Math.max(0, Math.min(99, val));
+			val = Math.max(0, Math.min(MAX_SCORE_VALUE, val));
 			input.value = String(val);
 			return val;
 		}
@@ -1430,7 +1431,7 @@
 			var input = document.getElementById(id);
 			var val = parseInt(input.value, 10);
 			if (isNaN(val)) val = 0;
-			val = Math.max(0, Math.min(99, val));
+			val = Math.max(0, Math.min(MAX_SCORE_VALUE, val));
 			input.value = String(val);
 			return val;
 		}
@@ -1467,10 +1468,10 @@
 			return {
 				p1Name: document.getElementById('p1Name').value,
 				p1Team: document.getElementById('p1Team').value,
-				p1Score: String(Math.max(0, Math.min(99, p1Raw))),
+				p1Score: String(Math.max(0, Math.min(MAX_SCORE_VALUE, p1Raw))),
 				p2Name: document.getElementById('p2Name').value,
 				p2Team: document.getElementById('p2Team').value,
-				p2Score: String(Math.max(0, Math.min(99, p2Raw))),
+				p2Score: String(Math.max(0, Math.min(MAX_SCORE_VALUE, p2Raw))),
 				round: document.getElementById('round').value,
 				game: getGameValue(),
 				counters: getCountersData(),

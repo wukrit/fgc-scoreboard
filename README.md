@@ -183,7 +183,7 @@ For quick testing without a server: open `web/index.html` and `web/overlay/score
 The controller is a mobile-friendly web form for updating:
 
 - **Player names and teams**
-- **Scores** — tap **+** / **−** (auto-saves) or type a score directly (0–99, saves on blur or Enter)
+- **Scores** — tap **+** / **−** (auto-saves) or type a score directly (0–999, saves on blur or Enter)
 - **Round**
 - **Game** — pick from 12 presets or toggle **Enter custom name** for any game
 
@@ -264,7 +264,7 @@ Three sync modes, auto-detected by priority:
 
 All scoreboard fields are strings in JSON (`p1Name`, `p1Team`, `p1Score`, `p2Name`, `p2Team`, `p2Score`, `round`, `game`, `timestamp`). The controller sets `timestamp` on every save so multiple controllers can detect changes.
 
-**Optional counters:** Expand **Additional Counters** in the controller to add up to 8 custom counters (label + value 0–99). Values sync through the same JSON payload under a `counters` object and display on `/overlay/counters.html` as a separate OBS browser source. Counter steppers auto-save; **Clear All** does not remove counters.
+**Optional counters:** Expand **Additional Counters** in the controller to add up to 8 custom counters (label + value 0–999). Values sync through the same JSON payload under a `counters` object and display on `/overlay/counters.html` as a separate OBS browser source. Counter steppers auto-save; **Clear All** does not remove counters.
 
 **Hosted (Railway):** See [deploy/railway.md](deploy/railway.md). Infrastructure as code in `.railway/railway.ts`. POST rate limiting defaults to 60 requests/minute per IP (`FGC_RATE_LIMIT`).
 

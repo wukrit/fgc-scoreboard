@@ -17,6 +17,7 @@ pub const SCOREBOARD_FILE: &str = "scoreboard.json";
 pub const MAX_COUNTERS: usize = 8;
 pub const MAX_COUNTER_LABEL: usize = 64;
 pub const MAX_COUNTER_ID: usize = 32;
+pub const MAX_SCORE_VALUE: u32 = 999;
 
 pub static ALLOWED_KEYS: [&str; 9] = [
     "p1Name",
@@ -153,6 +154,14 @@ fn validate_schema(data: &Value) -> bool {
             if !validate_counters(value) {
                 return false;
             }
+        } else if key == "p1Score" || key == "p2Score" {
+            let s = match value.as_str() {
+                Some(s) => s,
+                None => return false,
+            };
+            if !validate_numeric_score(s) {
+                return false;
+            }
         } else if !value.is_string() || value.as_str().map(|s| s.len() > 128).unwrap_or(true) {
             return false;
         }
@@ -192,7 +201,7 @@ fn validate_counters(value: &Value) -> bool {
             };
             match field.as_str() {
                 "label" if s.len() > MAX_COUNTER_LABEL => return false,
-                "value" if !validate_counter_value(s) => return false,
+                "value" if !validate_numeric_score(s) => return false,
                 _ => {}
             }
         }
@@ -200,11 +209,11 @@ fn validate_counters(value: &Value) -> bool {
     true
 }
 
-fn validate_counter_value(s: &str) -> bool {
-    if s.is_empty() || s.len() > 2 || !s.chars().all(|c| c.is_ascii_digit()) {
+fn validate_numeric_score(s: &str) -> bool {
+    if s.is_empty() || s.len() > 3 || !s.chars().all(|c| c.is_ascii_digit()) {
         return false;
     }
-    s.parse::<u32>().map(|n| n <= 99).unwrap_or(false)
+    s.parse::<u32>().map(|n| n <= MAX_SCORE_VALUE).unwrap_or(false)
 }
 
 fn atomic_write(
@@ -218,4 +227,57 @@ fn atomic_write(
     std::fs::write(tmp_path, body)?;
     std::fs::rename(tmp_path, path)?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn accepts_triple_digit_counter() {
+        let data = json!({
+            "p1Name": "",
+            "p1Team": "",
+            "p1Score": "0",
+            "p2Name": "",
+            "p2Team": "",
+            "p2Score": "0",
+            "round": "",
+            "game": "",
+            "timestamp": "1",
+            "counters": {
+                "abc123": { "label": "Stock", "value": "100" }
+            }
+        });
+        assert!(validate_schema(&data), "expected triple-digit counter to pass");
+    }
+
+    #[test]
+    fn accepts_exact_post_payload() {
+        let raw = r#"{"p1Name":"","p1Team":"","p1Score":"110","p2Name":"","p2Team":"","p2Score":"0","round":"","game":"","timestamp":"1","counters":{"abc123":{"label":"Stock","value":"100"}}}"#;
+        let data: Value = serde_json::from_str(raw).unwrap();
+        assert!(validate_numeric_score("100"));
+        assert!(validate_numeric_score("110"));
+        assert!(validate_schema(&data), "exact POST payload should pass");
+    }
+
+    #[test]
+    fn rejects_four_digit_counter() {
+        let data = json!({
+            "p1Name": "",
+            "p1Team": "",
+            "p1Score": "0",
+            "p2Name": "",
+            "p2Team": "",
+            "p2Score": "0",
+            "round": "",
+            "game": "",
+            "timestamp": "1",
+            "counters": {
+                "x": { "label": "Bad", "value": "1000" }
+            }
+        });
+        assert!(!validate_schema(&data));
+    }
 }

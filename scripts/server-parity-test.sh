@@ -41,20 +41,28 @@ code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE/scoreboard.json" \
 [ "$code" = "400" ] || fail "invalid schema expected 400 got $code"
 pass "POST invalid schema -> 400"
 
-# Valid counters payload
-valid_payload='{"p1Name":"","p1Team":"","p1Score":"0","p2Name":"","p2Team":"","p2Score":"0","round":"","game":"","timestamp":"1","counters":{"abc123":{"label":"Stock","value":"2"}}}'
+# Valid counters payload (including triple-digit value)
+valid_payload='{"p1Name":"","p1Team":"","p1Score":"0","p2Name":"","p2Team":"","p2Score":"0","round":"","game":"","timestamp":"1","counters":{"abc123":{"label":"Stock","value":"999"}}}'
 code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE/scoreboard.json" \
   -H 'Content-Type: application/json' -d "$valid_payload")
 [ "$code" = "200" ] || fail "valid counters expected 200 got $code"
 curl -sf "$BASE/scoreboard.json" | grep -q '"Stock"' || fail "GET scoreboard.json missing counters"
+curl -sf "$BASE/scoreboard.json" | grep -q '"999"' || fail "GET scoreboard.json missing counter value 999"
 pass "POST valid counters -> 200 + round-trip"
 
-# Invalid counters shape
-invalid_payload='{"p1Name":"","p1Team":"","p1Score":"0","p2Name":"","p2Team":"","p2Score":"0","round":"","game":"","timestamp":"1","counters":{"x":{"label":"Bad","value":"100"}}}'
+# Invalid counters shape (four digits)
+invalid_payload='{"p1Name":"","p1Team":"","p1Score":"0","p2Name":"","p2Team":"","p2Score":"0","round":"","game":"","timestamp":"1","counters":{"x":{"label":"Bad","value":"1000"}}}'
 code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE/scoreboard.json" \
   -H 'Content-Type: application/json' -d "$invalid_payload")
 [ "$code" = "400" ] || fail "invalid counters expected 400 got $code"
 pass "POST invalid counters -> 400"
+
+# Invalid score (four digits)
+invalid_score_payload='{"p1Name":"","p1Team":"","p1Score":"1000","p2Name":"","p2Team":"","p2Score":"0","round":"","game":"","timestamp":"1"}'
+code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$BASE/scoreboard.json" \
+  -H 'Content-Type: application/json' -d "$invalid_score_payload")
+[ "$code" = "400" ] || fail "invalid score expected 400 got $code"
+pass "POST invalid score -> 400"
 
 # Unknown path
 code=$(curl -s -o /dev/null -w '%{http_code}' "$BASE/not-found-path")
