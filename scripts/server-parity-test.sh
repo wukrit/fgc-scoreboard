@@ -28,8 +28,8 @@ pass "GET /overlay/scoreboard.html"
 curl -sf "$BASE/overlay/counters.html" | head -c 20 | grep -qi '<html' || fail "GET counters overlay"
 pass "GET /overlay/counters.html"
 
-curl -sf "$BASE/css/pico.classless.min.css" | head -c 5 | grep -q '.' || fail "GET css"
-pass "GET /css/pico.classless.min.css"
+curl -sf "$BASE/css/controller.css" | head -c 5 | grep -q '.' || fail "GET css"
+pass "GET /css/controller.css"
 
 # Scoreboard GET
 curl -sf "$BASE/scoreboard.json" | grep -q p1Name || fail "GET scoreboard.json"

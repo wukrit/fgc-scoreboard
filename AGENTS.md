@@ -6,7 +6,7 @@ This file provides guidance to AI coding agents when working with code in this r
 
 FGC Scoreboard is a pure HTML/CSS/JS scoreboard overlay for fighting game tournament streams. It uses no images for the scoreboard itself (only optional tournament logos) and no webm animations — all animations are CSS keyframes and GreenSock (TweenMax).
 
-The overlay and controller received a **neo-brutalist visual reskin** (Mar 2026): P1 red (`#ff4444`), P2 blue (`#4488ff`), 3px outlines, drop-shadows, and skewed player bars.
+The overlay received a **neo-brutalist visual reskin** (Mar 2026): P1 red (`#ff4444`), P2 blue (`#4488ff`), 3px outlines, drop-shadows, and skewed player bars. The controller uses a separate mobile-first product UI (`web/css/controller.css`).
 
 For end-user setup (LAN, tunnel, remote, customization, security), see [README.md](README.md).
 
@@ -58,8 +58,8 @@ LAN and tunnel have **no authentication by default** (set `FGC_AUTH_TOKEN` to en
 ### Key Files
 
 - **`README.md`** — End-user setup (LAN, tunnel, remote, customization, security)
-- **`web/index.html`** — Controller (neo-brutalist mobile form). Pico CSS + custom overrides. Token gate + `authFetch()` for LAN/hosted auth. Optional collapsible **Additional Counters** section (dynamic add/remove, greyscale styling).
-- **`web/css/pico.classless.min.css`** — Pico CSS v2.1.1 classless variant (controller only)
+- **`web/index.html`** — Controller (mobile operator form). Token gate + `authFetch()` for LAN/hosted auth. Optional collapsible **Additional Counters** section (dynamic add/remove).
+- **`web/css/controller.css`** — Controller styles (dark product UI, mobile-first)
 - **`web/overlay/scoreboard.html`** — Main OBS overlay (1920×1080). Animation config as inline `<script>` vars. `?bin=` required only in **remote** mode.
 - **`web/overlay/counters.html`** — Optional counters OBS overlay (1920×1080). Greyscale rectangular cards; reads `counters` from same JSON payload.
 - **`web/overlay/js/scoreboard.js`** — Core overlay logic: mode setup, polling, game layout, TweenMax animations, logo rotation, `shrinkToFit()`
@@ -128,7 +128,7 @@ Animation config vars remain inline in `web/overlay/scoreboard.html`.
 
 ### Dependencies (vendored, no package manager)
 
-- Pico CSS v2.1.1 (`web/css/pico.classless.min.css`) — controller only
+- System UI fonts via `web/css/controller.css` — controller only
 - jQuery 3.3.1 (`web/overlay/js/jquery-3.3.1.min.js`)
 - GreenSock/TweenMax — only `TweenMax.min.js` loaded at runtime
 - Archivo Black font (`web/overlay/fonts/ArchivoBlack-Regular.ttf`)
@@ -193,7 +193,7 @@ Release binary defaults to tunnel on. If localtunnel is unreachable (offline), i
 
 **Logos:** Add `<img class="logos">` tags inside `#logoWrapper` in `web/overlay/scoreboard.html`. Sample assets in `web/overlay/imgs/`.
 
-**Controller styling:** Neo-brutalist overrides in `web/index.html` inline `<style>`.
+**Controller styling:** Product UI in `web/css/controller.css` (muted P1/P2 accents on steppers and headers; overlay keeps `#ff4444` / `#4488ff`).
 
 ## docs/
 

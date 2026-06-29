@@ -1,801 +1,12 @@
 <!DOCTYPE html>
-<!-- Pico CSS v2.1.1 (classless variant), vendored from jsDelivr -->
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+	<meta name="color-scheme" content="dark">
 	<title>FGC Scoreboard Controller</title>
-	<link rel="stylesheet" href="css/pico.classless.min.css">
-	<style>
-		/* === Neo-Brutalist Overrides === */
-		:root {
-			--pico-border-radius: 0;
-			--pico-border-width: 3px;
-			--pico-box-shadow: 4px 4px 0 #000;
-			--surface: #222244;
-			--bg: #1a1a2e;
-			--text: #f0f0f0;
-			--text-muted: #b8b8c8;
-			--p1: #ff4444;
-			--p2: #4488ff;
-			--accent: #d4ff00;
-			--focus-ring: #fff;
-			--touch-min: 48px;
-		}
-
-		@media (prefers-reduced-motion: reduce) {
-			*,
-			*::before,
-			*::after {
-				animation-duration: 0.01ms !important;
-				animation-iteration-count: 1 !important;
-				transition-duration: 0.01ms !important;
-				scroll-behavior: auto !important;
-			}
-		}
-
-		body {
-			background: var(--bg);
-			color: var(--text);
-			padding: 16px;
-			padding-left: max(16px, env(safe-area-inset-left));
-			padding-right: max(16px, env(safe-area-inset-right));
-			max-width: 900px;
-			margin: 0 auto;
-		}
-
-		.skip-link {
-			position: absolute;
-			left: -9999px;
-			top: auto;
-			width: 1px;
-			height: 1px;
-			overflow: hidden;
-			z-index: 200;
-			background: var(--accent);
-			color: #000;
-			font-weight: 700;
-			padding: 12px 16px;
-			border: 3px solid #000;
-			text-decoration: none;
-		}
-
-		.skip-link:focus {
-			position: fixed;
-			left: 16px;
-			top: 16px;
-			width: auto;
-			height: auto;
-			overflow: visible;
-		}
-
-		h1 {
-			font-size: clamp(1.125rem, 4vw, 1.5rem);
-			font-weight: 900;
-			text-align: center;
-			text-transform: uppercase;
-			letter-spacing: 0.1em;
-			margin: 0;
-			color: #fff;
-		}
-
-		legend,
-		.panel-title {
-			font-size: 13px;
-			font-weight: 700;
-			text-transform: uppercase;
-			letter-spacing: 0.12em;
-			margin-bottom: 12px;
-			padding: 0;
-		}
-
-		fieldset {
-			border: none;
-			margin: 0;
-			padding: 0;
-			min-width: 0;
-		}
-
-		/* --- Players Grid --- */
-		.players-grid {
-			display: grid;
-			grid-template-columns: 1fr;
-			gap: 16px;
-			margin-bottom: 16px;
-		}
-
-		@media (min-width: 768px) {
-			.players-grid {
-				grid-template-columns: 1fr 1fr;
-			}
-		}
-
-		/* --- Player Sections --- */
-		.player-section {
-			background: var(--surface);
-			border: 3px solid #000;
-			box-shadow: 4px 4px 0 #000;
-			padding: 16px;
-			margin-bottom: 0;
-		}
-
-		.player-section.p1 {
-			border-left: 6px solid var(--p1);
-			background: rgba(255, 68, 68, 0.06);
-		}
-		.player-section.p1 .panel-title { color: var(--p1); }
-		.player-section.p1 { --focus-ring: var(--p1); }
-
-		.player-section.p2 {
-			border-left: 6px solid var(--p2);
-			background: rgba(68, 136, 255, 0.06);
-		}
-		.player-section.p2 .panel-title { color: var(--p2); }
-		.player-section.p2 { --focus-ring: var(--p2); }
-
-		/* --- Match Section --- */
-		.match-section {
-			background: var(--surface);
-			border: 3px solid #000;
-			box-shadow: 4px 4px 0 #000;
-			padding: 16px;
-			margin-bottom: 16px;
-		}
-		.match-section .panel-title { color: var(--text-muted); }
-
-		/* --- Form Fields --- */
-		.field-row {
-			display: flex;
-			flex-direction: column;
-			gap: 10px;
-			margin-bottom: 12px;
-		}
-
-		@media (min-width: 480px) {
-			.field-row {
-				flex-direction: row;
-				gap: 8px;
-			}
-		}
-
-		.field-row:last-child { margin-bottom: 0; }
-
-		.field {
-			flex: 1;
-			display: flex;
-			flex-direction: column;
-			min-width: 0;
-		}
-
-		.field label {
-			font-size: 11px;
-			font-weight: 700;
-			color: var(--text-muted);
-			margin-bottom: 4px;
-			text-transform: uppercase;
-			letter-spacing: 0.1em;
-		}
-
-		.field input,
-		.field select {
-			background: var(--bg);
-			border: 3px solid #000;
-			box-shadow: 3px 3px 0 #000;
-			color: #fff;
-			padding: 12px;
-			font-size: 16px;
-			width: 100%;
-			min-height: var(--touch-min);
-		}
-
-		.field input::placeholder {
-			color: #7a7a8a;
-		}
-
-		.field input:focus-visible,
-		.field select:focus-visible,
-		.score-display:focus-visible,
-		.score-btn:focus-visible,
-		.button-row button:focus-visible,
-		#lock-btn:focus-visible,
-		.auth-gate-panel input:focus-visible,
-		.auth-gate-panel button:focus-visible {
-			outline: 3px solid var(--focus-ring, #fff);
-			outline-offset: 2px;
-			border-color: #000;
-		}
-
-		.match-section,
-		#controller-main {
-			--focus-ring: var(--accent);
-		}
-
-		/* --- Score Stepper --- */
-		.score-stepper {
-			display: flex;
-			align-items: stretch;
-			gap: 0;
-			margin-top: 4px;
-			width: 100%;
-		}
-
-		.score-stepper .score-btn {
-			flex: 0 0 64px;
-			width: 64px;
-			min-height: var(--touch-min);
-			height: auto;
-			font-size: 28px;
-			font-weight: 900;
-			border: 3px solid #000;
-			box-shadow: 3px 3px 0 #000;
-			background: #333;
-			color: #fff;
-			cursor: pointer;
-			transition: transform 0.08s;
-			touch-action: manipulation;
-			user-select: none;
-			-webkit-tap-highlight-color: transparent;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			padding: 0;
-			text-transform: none;
-			letter-spacing: 0;
-		}
-
-		.p1 .score-btn { background: var(--p1); color: #000; }
-		.p2 .score-btn { background: var(--p2); color: #000; }
-
-		@media (prefers-reduced-motion: no-preference) {
-			.score-stepper .score-btn:active,
-			.button-row button:active,
-			.auth-gate-panel button:active {
-				transform: translate(3px, 3px);
-				box-shadow: 0 0 0 #000;
-			}
-
-			.button-row button:active {
-				transform: translate(4px, 4px);
-			}
-		}
-
-		.score-display {
-			flex: 1;
-			min-width: 72px;
-			min-height: var(--touch-min);
-			font-size: clamp(2rem, 8vw, 2.25rem);
-			font-weight: 900;
-			font-variant-numeric: tabular-nums;
-			text-align: center;
-			background: #111;
-			border-top: 3px solid #000;
-			border-bottom: 3px solid #000;
-			border-left: none;
-			border-right: none;
-			color: #fff;
-			box-shadow: none;
-			padding: 0;
-			cursor: text;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			line-height: 1;
-		}
-
-		/* --- Team Field --- */
-		@media (min-width: 480px) {
-			.field-team {
-				flex: 0 0 112px;
-				max-width: 112px;
-			}
-		}
-
-		.field-hint {
-			font-size: 12px;
-			color: var(--text-muted);
-			margin-top: 6px;
-		}
-
-		.game-mode-toggle {
-			background: none;
-			border: none;
-			box-shadow: none;
-			color: var(--accent);
-			font-size: 12px;
-			font-weight: 700;
-			text-transform: uppercase;
-			letter-spacing: 0.08em;
-			padding: 8px 0 0;
-			margin: 0;
-			cursor: pointer;
-			text-align: left;
-			min-height: auto;
-			text-decoration: underline;
-			text-underline-offset: 2px;
-			touch-action: manipulation;
-		}
-
-		.game-mode-toggle:focus-visible {
-			outline: 3px solid var(--accent);
-			outline-offset: 2px;
-		}
-
-		.game-field [hidden] {
-			display: none !important;
-		}
-
-		/* --- Buttons --- */
-		.actions-wrap {
-			display: flex;
-			flex-direction: column;
-			gap: 8px;
-			margin-bottom: 8px;
-		}
-
-		.button-row {
-			display: flex;
-			gap: 8px;
-		}
-
-		.button-row button {
-			flex: 1;
-			border: 3px solid #000;
-			box-shadow: 4px 4px 0 #000;
-			font-size: 14px;
-			font-weight: 700;
-			text-transform: uppercase;
-			letter-spacing: 0.1em;
-			padding: 14px 12px;
-			cursor: pointer;
-			transition: transform 0.08s;
-			min-height: var(--touch-min);
-			touch-action: manipulation;
-			user-select: none;
-			-webkit-tap-highlight-color: transparent;
-		}
-
-		.btn-save {
-			background: var(--accent);
-			color: #000;
-		}
-		.btn-swap {
-			background: #444;
-			color: #fff;
-		}
-		.btn-reset {
-			background: #2a2a2a;
-			color: #ddd;
-		}
-		.btn-clear {
-			background: #1a1a1a;
-			color: #aaa;
-			font-size: 13px;
-		}
-
-		/* --- Optional Counters --- */
-		.counters-section {
-			margin-top: 8px;
-			border: 3px solid #444;
-			box-shadow: 3px 3px 0 #000;
-			background: #1a1a1a;
-			padding: 0;
-		}
-
-		.counters-section > summary {
-			cursor: pointer;
-			font-size: 13px;
-			font-weight: 700;
-			text-transform: uppercase;
-			letter-spacing: 0.08em;
-			color: #bbb;
-			padding: 14px 16px;
-			list-style: none;
-			user-select: none;
-			touch-action: manipulation;
-		}
-
-		.counters-section > summary::-webkit-details-marker {
-			display: none;
-		}
-
-		.counters-section > summary::before {
-			content: '+ ';
-			font-weight: 900;
-			color: #888;
-		}
-
-		.counters-section[open] > summary::before {
-			content: '− ';
-		}
-
-		.counters-section > summary:focus-visible {
-			outline: 3px solid #888;
-			outline-offset: -3px;
-		}
-
-		.counters-inner {
-			padding: 0 16px 16px;
-			border-top: 3px solid #333;
-		}
-
-		.counters-list {
-			display: flex;
-			flex-direction: column;
-			gap: 10px;
-			margin-bottom: 12px;
-		}
-
-		.counter-row {
-			display: flex;
-			flex-direction: column;
-			gap: 12px;
-			padding: 12px;
-			background: #222;
-			border: 3px solid #555;
-			box-shadow: 2px 2px 0 #000;
-		}
-
-		.counter-label-field {
-			width: 100%;
-			min-width: 0;
-		}
-
-		.counter-label-field label {
-			display: block;
-			font-size: 11px;
-			font-weight: 700;
-			text-transform: uppercase;
-			letter-spacing: 0.06em;
-			color: #888;
-			margin-bottom: 4px;
-		}
-
-		.counter-label-field input {
-			width: 100%;
-			background: #111;
-			border: 3px solid #444;
-			box-shadow: 2px 2px 0 #000;
-			color: #eee;
-			padding: 10px;
-			font-size: 15px;
-			min-height: 44px;
-		}
-
-		.counter-row-actions {
-			display: flex;
-			align-items: flex-end;
-			justify-content: space-between;
-			gap: 12px;
-			width: 100%;
-		}
-
-		.counter-stepper-wrap {
-			flex: 1 1 auto;
-			min-width: 0;
-			max-width: 280px;
-			display: flex;
-			flex-direction: column;
-			gap: 4px;
-		}
-
-		.counter-stepper-wrap .stepper-label {
-			font-size: 11px;
-			font-weight: 700;
-			text-transform: uppercase;
-			letter-spacing: 0.06em;
-			color: #888;
-		}
-
-		.counter-stepper {
-			display: grid;
-			grid-template-columns: 52px minmax(64px, 1fr) 52px;
-			width: 100%;
-			min-width: 0;
-			align-items: stretch;
-		}
-
-		.counter-stepper .counter-btn {
-			margin: 0;
-			padding: 0;
-			width: 100%;
-			min-width: 0;
-			min-height: 48px;
-			font-size: 22px;
-			font-weight: 900;
-			line-height: 1;
-			border: 3px solid #000;
-			box-shadow: none;
-			background: #444;
-			color: #fff;
-			cursor: pointer;
-			box-sizing: border-box;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			text-transform: none;
-			letter-spacing: 0;
-			touch-action: manipulation;
-			user-select: none;
-			-webkit-tap-highlight-color: transparent;
-		}
-
-		.counter-stepper .counter-btn:first-child {
-			border-right: none;
-		}
-
-		.counter-stepper .counter-btn:last-child {
-			border-left: none;
-		}
-
-		.counter-stepper .counter-value {
-			margin: 0;
-			padding: 0;
-			width: 100%;
-			min-width: 0;
-			min-height: 48px;
-			font-size: 1.5rem;
-			font-weight: 900;
-			font-variant-numeric: tabular-nums;
-			text-align: center;
-			line-height: 1;
-			background: #333;
-			border: 3px solid #000;
-			border-radius: 0;
-			box-shadow: none;
-			color: #fff;
-			cursor: text;
-			box-sizing: border-box;
-			-webkit-appearance: none;
-			appearance: none;
-		}
-
-		.counter-stepper .counter-value:focus-visible,
-		.counter-stepper .counter-btn:focus-visible {
-			outline: 3px solid #888;
-			outline-offset: -3px;
-		}
-
-		@media (prefers-reduced-motion: no-preference) {
-			.counter-stepper .counter-btn:active {
-				transform: translate(2px, 2px);
-			}
-		}
-
-		.counter-remove {
-			flex: 0 0 auto;
-			background: #2a2a2a;
-			border: 3px solid #555;
-			box-shadow: 2px 2px 0 #000;
-			color: #aaa;
-			font-size: 12px;
-			font-weight: 700;
-			text-transform: uppercase;
-			padding: 10px 14px;
-			min-height: 48px;
-			white-space: nowrap;
-			cursor: pointer;
-			touch-action: manipulation;
-		}
-
-		.counter-remove:focus-visible,
-		.counter-label-field input:focus-visible,
-		.btn-add-counter:focus-visible {
-			outline: 3px solid #888;
-			outline-offset: 2px;
-		}
-
-		.btn-add-counter {
-			width: 100%;
-			background: #333;
-			border: 3px solid #555;
-			box-shadow: 3px 3px 0 #000;
-			color: #ccc;
-			font-size: 13px;
-			font-weight: 700;
-			text-transform: uppercase;
-			letter-spacing: 0.08em;
-			padding: 12px;
-			min-height: var(--touch-min);
-			cursor: pointer;
-			touch-action: manipulation;
-		}
-
-		.btn-add-counter:disabled {
-			opacity: 0.45;
-			cursor: not-allowed;
-		}
-
-		.counters-empty-hint {
-			font-size: 12px;
-			color: var(--text-muted);
-			margin: 0 0 10px;
-		}
-
-		/* Sticky primary actions on mobile */
-		.actions-primary {
-			margin-bottom: 0;
-		}
-
-		@media (max-width: 767px) {
-			body.has-sticky-actions {
-				padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
-			}
-
-			.actions-primary {
-				position: fixed;
-				left: 0;
-				right: 0;
-				bottom: 0;
-				z-index: 40;
-				margin: 0;
-				padding: 12px 16px;
-				padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-				padding-left: max(16px, env(safe-area-inset-left));
-				padding-right: max(16px, env(safe-area-inset-right));
-				background: var(--bg);
-				border-top: 3px solid #000;
-				box-shadow: 0 -4px 0 rgba(0, 0, 0, 0.35);
-			}
-
-			.actions-primary .btn-save,
-			.actions-primary .btn-swap {
-				min-height: 52px;
-				font-size: 15px;
-			}
-		}
-
-		/* --- Status Indicator --- */
-		#status {
-			text-align: center;
-			font-size: 13px;
-			font-weight: 700;
-			text-transform: uppercase;
-			letter-spacing: 0.05em;
-			padding: 10px;
-			margin-top: 8px;
-			border: 3px solid transparent;
-			visibility: hidden;
-		}
-
-		.status-ok {
-			background: #0a3d0a;
-			color: #6ee06e;
-			border-color: #4caf50 !important;
-		}
-		.status-err {
-			background: #3d0a0a;
-			color: #ff6b6b;
-			border-color: #f44336 !important;
-		}
-		.status-loading {
-			background: #3d3d0a;
-			color: #ffeb3b;
-			border-color: #ffeb3b !important;
-		}
-
-		/* --- Mode Warning --- */
-		#no-bin-warning {
-			background: var(--surface);
-			color: #ffeb3b;
-			text-align: center;
-			padding: 12px;
-			margin-bottom: 16px;
-			font-size: 13px;
-			font-weight: 700;
-			border: 3px solid #ffeb3b;
-			display: none;
-		}
-
-		#no-bin-warning a {
-			color: #ffeb3b;
-			text-underline-offset: 2px;
-		}
-
-		/* --- Auth Gate --- */
-		#auth-gate {
-			position: fixed;
-			inset: 0;
-			z-index: 100;
-			background: rgba(26, 26, 46, 0.97);
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			padding: 16px;
-			padding-left: max(16px, env(safe-area-inset-left));
-			padding-right: max(16px, env(safe-area-inset-right));
-		}
-
-		#auth-gate[hidden] {
-			display: none !important;
-		}
-
-		.auth-gate-panel {
-			background: var(--surface);
-			border: 3px solid #000;
-			box-shadow: 8px 8px 0 #000;
-			padding: 24px;
-			width: 100%;
-			max-width: 360px;
-		}
-
-		.auth-gate-panel h2 {
-			text-align: center;
-			color: var(--accent);
-			margin-bottom: 16px;
-		}
-
-		.auth-gate-panel label {
-			display: block;
-			font-size: 11px;
-			font-weight: 700;
-			color: var(--text-muted);
-			margin-bottom: 6px;
-			text-transform: uppercase;
-			letter-spacing: 0.1em;
-		}
-
-		.auth-gate-panel input {
-			width: 100%;
-			background: var(--bg);
-			border: 3px solid #000;
-			box-shadow: 3px 3px 0 #000;
-			color: #fff;
-			padding: 12px;
-			font-size: 16px;
-			margin-bottom: 12px;
-			min-height: var(--touch-min);
-		}
-
-		.auth-gate-panel button {
-			width: 100%;
-			background: var(--accent);
-			color: #000;
-			border: 3px solid #000;
-			box-shadow: 4px 4px 0 #000;
-			font-weight: 700;
-			text-transform: uppercase;
-			letter-spacing: 0.1em;
-			padding: 14px;
-			cursor: pointer;
-			min-height: var(--touch-min);
-		}
-
-		#auth-gate-error {
-			color: #ff6b6b;
-			font-size: 13px;
-			font-weight: 700;
-			text-align: center;
-			margin-top: 12px;
-			min-height: 1.2em;
-		}
-
-		.page-header {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			gap: 12px;
-			margin-bottom: 16px;
-			flex-wrap: wrap;
-		}
-
-		#lock-btn {
-			background: #444;
-			color: #ddd;
-			border: 3px solid #000;
-			box-shadow: 3px 3px 0 #000;
-			font-size: 11px;
-			font-weight: 700;
-			text-transform: uppercase;
-			padding: 10px 12px;
-			cursor: pointer;
-			min-height: var(--touch-min);
-		}
-
-		#lock-btn[hidden] {
-			display: none !important;
-		}
-	</style>
-</head>
+	<link rel="stylesheet" href="css/controller.css">
+	</head>
 <body class="has-sticky-actions">
 	<a class="skip-link" href="#controller-main">Skip to controller</a>
 
@@ -812,70 +23,84 @@
 	</div>
 
 	<main id="controller-main">
-		<header class="page-header">
-			<h1>FGC Scoreboard</h1>
-			<button type="button" id="lock-btn" onclick="lockController()" hidden aria-label="Lock controller and require token again">Lock</button>
+		<header class="app-header">
+			<h1 class="app-title">Scoreboard</h1>
+			<div class="header-actions">
+				<button type="button" id="lock-btn" onclick="lockController()" hidden aria-label="Lock controller and require token again">Lock</button>
+			</div>
 		</header>
 
-		<div id="no-bin-warning" role="status" aria-live="polite">
+		<div id="no-bin-warning" class="banner" role="status" aria-live="polite">
 			No bin ID found. Add <strong>?bin=YOUR_ID</strong> to the URL.<br>
 			Create a free bin at <a href="https://www.npoint.io" target="_blank" rel="noopener noreferrer">npoint.io</a>
 		</div>
 
 		<form id="scoreboard-form" onsubmit="event.preventDefault(); save();" aria-describedby="status">
 			<div class="players-grid">
-				<section class="player-section p1" aria-labelledby="p1-heading">
+				<section class="player-card p1" aria-labelledby="p1-heading">
 					<fieldset>
-						<legend id="p1-heading" class="panel-title">Player 1</legend>
-						<div class="field-row">
-							<div class="field">
-								<label for="p1Name">Name</label>
-								<input type="text" id="p1Name" name="p1Name" placeholder="Player 1" maxlength="64" autocomplete="off">
-							</div>
-							<div class="field field-team">
-								<label for="p1Team">Team</label>
-								<input type="text" id="p1Team" name="p1Team" placeholder="Team" maxlength="32" autocomplete="off">
-							</div>
+						<legend id="p1-heading" class="visually-hidden">Player 1</legend>
+						<div class="player-header">
+							<span class="player-dot" aria-hidden="true"></span>
+							<span class="panel-title">Player 1</span>
 						</div>
-						<div class="score-stepper" role="group" aria-labelledby="p1-score-label">
+						<div class="player-body">
 							<span id="p1-score-label" class="visually-hidden">Player 1 score</span>
-							<button type="button" class="score-btn" onclick="adjustScore('p1Score', -1)" aria-label="Decrease Player 1 score">&minus;</button>
-							<input type="text" id="p1Score" name="p1Score" value="0" class="score-display" inputmode="numeric" pattern="[0-9]*" maxlength="3" aria-label="Player 1 score" onblur="commitScore('p1Score')" oninput="filterScoreInput('p1Score')" onkeydown="handleScoreKeydown(event, 'p1Score')">
-							<button type="button" class="score-btn" onclick="adjustScore('p1Score', 1)" aria-label="Increase Player 1 score">+</button>
+							<div class="score-stepper" role="group" aria-labelledby="p1-score-label">
+								<button type="button" class="score-btn" onclick="adjustScore('p1Score', -1)" aria-label="Decrease Player 1 score">&minus;</button>
+								<input type="text" id="p1Score" name="p1Score" value="0" class="score-display" inputmode="numeric" pattern="[0-9]*" maxlength="3" aria-label="Player 1 score" onblur="commitScore('p1Score')" oninput="filterScoreInput('p1Score')" onkeydown="handleScoreKeydown(event, 'p1Score')">
+								<button type="button" class="score-btn" onclick="adjustScore('p1Score', 1)" aria-label="Increase Player 1 score">+</button>
+							</div>
+							<div class="field-row">
+								<div class="field">
+									<label for="p1Name">Name</label>
+									<input type="text" id="p1Name" name="p1Name" placeholder="Player 1" maxlength="64" autocomplete="off">
+								</div>
+								<div class="field field-team">
+									<label for="p1Team">Team</label>
+									<input type="text" id="p1Team" name="p1Team" placeholder="Team" maxlength="32" autocomplete="off">
+								</div>
+							</div>
 						</div>
 					</fieldset>
 				</section>
 
-				<section class="player-section p2" aria-labelledby="p2-heading">
+				<section class="player-card p2" aria-labelledby="p2-heading">
 					<fieldset>
-						<legend id="p2-heading" class="panel-title">Player 2</legend>
-						<div class="field-row">
-							<div class="field">
-								<label for="p2Name">Name</label>
-								<input type="text" id="p2Name" name="p2Name" placeholder="Player 2" maxlength="64" autocomplete="off">
-							</div>
-							<div class="field field-team">
-								<label for="p2Team">Team</label>
-								<input type="text" id="p2Team" name="p2Team" placeholder="Team" maxlength="32" autocomplete="off">
-							</div>
+						<legend id="p2-heading" class="visually-hidden">Player 2</legend>
+						<div class="player-header">
+							<span class="player-dot" aria-hidden="true"></span>
+							<span class="panel-title">Player 2</span>
 						</div>
-						<div class="score-stepper" role="group" aria-labelledby="p2-score-label">
+						<div class="player-body">
 							<span id="p2-score-label" class="visually-hidden">Player 2 score</span>
-							<button type="button" class="score-btn" onclick="adjustScore('p2Score', -1)" aria-label="Decrease Player 2 score">&minus;</button>
-							<input type="text" id="p2Score" name="p2Score" value="0" class="score-display" inputmode="numeric" pattern="[0-9]*" maxlength="3" aria-label="Player 2 score" onblur="commitScore('p2Score')" oninput="filterScoreInput('p2Score')" onkeydown="handleScoreKeydown(event, 'p2Score')">
-							<button type="button" class="score-btn" onclick="adjustScore('p2Score', 1)" aria-label="Increase Player 2 score">+</button>
+							<div class="score-stepper" role="group" aria-labelledby="p2-score-label">
+								<button type="button" class="score-btn" onclick="adjustScore('p2Score', -1)" aria-label="Decrease Player 2 score">&minus;</button>
+								<input type="text" id="p2Score" name="p2Score" value="0" class="score-display" inputmode="numeric" pattern="[0-9]*" maxlength="3" aria-label="Player 2 score" onblur="commitScore('p2Score')" oninput="filterScoreInput('p2Score')" onkeydown="handleScoreKeydown(event, 'p2Score')">
+								<button type="button" class="score-btn" onclick="adjustScore('p2Score', 1)" aria-label="Increase Player 2 score">+</button>
+							</div>
+							<div class="field-row">
+								<div class="field">
+									<label for="p2Name">Name</label>
+									<input type="text" id="p2Name" name="p2Name" placeholder="Player 2" maxlength="64" autocomplete="off">
+								</div>
+								<div class="field field-team">
+									<label for="p2Team">Team</label>
+									<input type="text" id="p2Team" name="p2Team" placeholder="Team" maxlength="32" autocomplete="off">
+								</div>
+							</div>
 						</div>
 					</fieldset>
 				</section>
 			</div>
 
-			<section class="match-section" aria-labelledby="match-heading">
+			<section class="match-panel" aria-labelledby="match-heading">
 				<fieldset>
-					<legend id="match-heading" class="panel-title">Match Info</legend>
+					<legend id="match-heading" class="panel-title">Match details</legend>
 					<div class="field-row">
 						<div class="field">
 							<label for="round">Round</label>
-							<input type="text" id="round" name="round" placeholder="e.g. Grand Finals" maxlength="64" autocomplete="off">
+							<input type="text" id="round" name="round" placeholder="Grand Finals" maxlength="64" autocomplete="off">
 						</div>
 						<div class="field game-field">
 							<label for="game-select">Game</label>
@@ -903,7 +128,7 @@
 			</section>
 
 			<details class="counters-section">
-				<summary>Additional Counters (optional)</summary>
+				<summary>Additional counters</summary>
 				<div class="counters-inner">
 					<p class="counters-empty-hint" id="counters-hint">Add custom counters for a separate OBS overlay at <code>/overlay/counters.html</code>.</p>
 					<div id="counters-list" class="counters-list" role="list"></div>
@@ -917,8 +142,8 @@
 					<button type="button" class="btn-clear" onclick="clearAll()">Clear All</button>
 				</div>
 				<div class="button-row actions-primary" role="group" aria-label="Primary match actions">
-					<button type="submit" class="btn-save">Save</button>
-					<button type="button" class="btn-swap" onclick="swap()">Swap</button>
+					<button type="submit" class="btn-save">Save changes</button>
+					<button type="button" class="btn-swap" onclick="swap()">Swap sides</button>
 				</div>
 			</div>
 		</form>
@@ -926,19 +151,7 @@
 		<div id="status" role="status" aria-live="polite" aria-atomic="true">&nbsp;</div>
 	</main>
 
-	<style>
-		.visually-hidden {
-			position: absolute;
-			width: 1px;
-			height: 1px;
-			padding: 0;
-			margin: -1px;
-			overflow: hidden;
-			clip: rect(0, 0, 0, 0);
-			white-space: nowrap;
-			border: 0;
-		}
-	</style>
+
 
 	<script>
 		var AUTH_STORAGE_KEY = 'fgc-auth-token';
@@ -1004,15 +217,20 @@
 			return lanMode && window.location.protocol === 'https:' && authRequired;
 		}
 
+		function setBannerVisible(visible) {
+			var warning = document.getElementById('no-bin-warning');
+			warning.classList.toggle('is-visible', visible);
+		}
+
 		function updateServerModeBanner() {
 			if (!lanMode) return;
-			var warning = document.getElementById('no-bin-warning');
 			if (isHostedMode()) {
-				warning.style.display = 'none';
+				setBannerVisible(false);
 				return;
 			}
+			var warning = document.getElementById('no-bin-warning');
 			warning.textContent = 'LAN mode - connected to ' + window.location.host;
-			warning.style.display = 'block';
+			setBannerVisible(true);
 		}
 
 		var bootstrapToken = urlParams.get('token');
@@ -1103,7 +321,7 @@
 			console.log('LOCAL MODE');
 			var warning = document.getElementById('no-bin-warning');
 			warning.textContent = 'Local mode - data saved to this browser only.';
-			warning.style.display = 'block';
+			setBannerVisible(true);
 		}
 
 		var lastSyncedTimestamp = '';

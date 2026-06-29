@@ -4,7 +4,7 @@
 
 FGC Scoreboard is an HTML and CSS scoreboard overlay for fighting game tournament streams. It uses no images for the scoreboard itself (only optional tournament logos) and no webm files for animations — everything is CSS keyframes and GreenSock (TweenMax).
 
-The overlay and controller use a **neo-brutalist** look: P1 red (`#ff4444`), P2 blue (`#4488ff`), bold outlines, drop-shadows, and skewed player bars. The controller is a mobile-friendly web form built on [Pico CSS](https://picocss.com/).
+The overlay uses a **neo-brutalist** look: P1 red (`#ff4444`), P2 blue (`#4488ff`), bold outlines, drop-shadows, and skewed player bars. The controller is a mobile-friendly operator form with a clean dark product UI.
 
 ## Quick Start
 
